@@ -1,7 +1,13 @@
 package es.udc.fi.ri.mri_indexer;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +22,81 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class CollectionIndexer {
+/*	private int ValidateName(String s){
+		String s1 = s.substring(0,5);
+		int s2 = Integer.parseInt(s.substring(6,8));
+		String s3 = s.substring(s.lastIndexOf(".")+1);
+		
+		if ((s1.equals("reut2") & (s3.equals(".sgm") & (s2<1000) & (s2>=0)){
+			return 1;
+		}else {
+			return 0;
+		}
+	}
+*/
 
+	private InputStreamReader openDocument(File file){
+		FileInputStream input = null;
+		//FALTA VALIDAR NOMBRE
+		try {
+			input = new FileInputStream(file);
+			InputStreamReader in = new InputStreamReader(input, StandardCharsets.UTF_8);
+			return in;
+		} catch (FileNotFoundException e) {
+			return null;
+		}
+		
+		
+	}
+	
+	private void indexDocs(IndexWriter writer, File file){
+
+    	if (file.canRead()){ //SI EL ARCHIVO NO SE PUEDE LEER, NO PODEMOS INDEXARLO
+    		//SI SE TRATA DE UN DIRECTORIO HAY QUE RECORRERLO
+    		if(file.isDirectory()){
+    			File documents[] = file.listFiles();
+    			if(documents != null){
+    				for(int i= 0; i<documents.length; i++){
+    					//LLAMAMOS DE NUEVO A INDEXDOCS CON EL CONTENIDO DEL DIRECTORIO
+    					indexDocs(writer, documents[i]);
+    				}
+    			}
+    		}else{
+    			//EN CASO DE QUE SEA UN DOCUMENTO INDIVIDUAL, LO INDEXAMOS
+    			//PARA INDEXAR PRIMERO LO ABRIMOS Y CODIFICAMOS
+    			//InputStreamReader pasa de bytes a caracteres, segun codificacion indicada
+    			InputStreamReader input = openDocument(file);
+    			
+    			
+    			if (input!=null){
+    				//BufferedReader lee texto en un inputStream de caracteres
+    				//y provee una forma eficiente de leerlos por lineas
+    				BufferedReader buffer = new BufferedReader(input);
+    				//StringBuffer es para ir almacenando el contenido
+    				//Funciona parecido a String pero soporta threads
+    				//Es lo que necesita como entrada el parser de Reuters
+    				StringBuffer fileContent = new StringBuffer();
+    				String text = null;
+    				try {
+						while((text=buffer.readLine()) != null){
+							fileContent.append(text).append("\n");
+						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+    					
+    			}
+    			
+    			
+    		}
+    		
+    		
+    		
+    		
+    	}
+	}
+	
 	public static void main (String args[]){
 		//INSTRUCCIONES DE USO
 		String usage = "mri_indexer Usage: "
@@ -83,7 +163,14 @@ public class CollectionIndexer {
 	    	}
 	    	
 	    	IndexWriter writer = new IndexWriter(dir, iwc);
-	    	//indexDocs(writer,docDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
+	    	
+	    	File docsDir = new File(docsPath);
+	    	if(!docsDir.exists() || !docsDir.canRead()){
+				   System.out.println("Document directory '" +docsDir.getAbsolutePath()
+				   + "' does not exist or is not readable, please check the path");
+				   System.exit(1);	    		
+	    	}	
+	    	//indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
 	    								 //SI ES ARCHIVO FINAL INDEXAMOS, SINO SEGUIMOS BAJANDO 
 	    	
 	    	//CERRAMOS EL INDEXWRITER Y IMPRIMIMOS EL TIEMPO QUE HEMOS TARDADO EN INDEXAR
