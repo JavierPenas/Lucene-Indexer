@@ -64,9 +64,9 @@ public class CollectionIndexer {
 				Document doc = new Document();
 				doc.add(new TextField("title",document.get(0),Field.Store.YES));
 				//Faltaria formatear la date
-				doc.add(new TextField("body",document.get(2),Field.Store.NO));
-	  			doc.add(new StringField("topics",document.get(3),Field.Store.YES));
-			  	//doc.add(new StringField("dateline",document.get(4),Field.Store.YES));
+				doc.add(new TextField("body",document.get(1),Field.Store.NO));
+	  			doc.add(new StringField("topics",document.get(2),Field.Store.YES));
+			  	doc.add(new StringField("dateline",document.get(3),Field.Store.YES));
 			  	doc.add(new StringField("hostname",InetAddress.getLocalHost().getHostName(),Field.Store.YES));
 			  	doc.add(new StringField("thread",Thread.currentThread().getName(),Field.Store.YES));
 				
