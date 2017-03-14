@@ -1,20 +1,28 @@
 package es.udc.fi.ri.mri_indexer;
 
-import java.awt.image.BufferedImage;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Date;
+import java.util.LinkedList;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -22,20 +30,20 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class CollectionIndexer {
-/*	private int ValidateName(String s){
-		String s1 = s.substring(0,5);
-		int s2 = Integer.parseInt(s.substring(6,8));
+	
+	private static int ValidateName(String s){
 		String s3 = s.substring(s.lastIndexOf(".")+1);
-		
-		if ((s1.equals("reut2") & (s3.equals(".sgm") & (s2<1000) & (s2>=0)){
+		if (s3.equals("sgm")){
+			System.out.println("file: "+s);
 			return 1;
-		}else {
+		}else{
 			return 0;
 		}
-	}
-*/
 
-	private InputStreamReader openDocument(File file){
+	}
+
+
+	private static InputStreamReader openDocument(File file){
 		FileInputStream input = null;
 		//FALTA VALIDAR NOMBRE
 		try {
@@ -49,7 +57,34 @@ public class CollectionIndexer {
 		
 	}
 	
-	private void indexDocs(IndexWriter writer, File file){
+	//INDEXAMOS TODOS LOS CAMPOS PARA CADA DOCUMENTO OBTENIDO
+	static void addFields(IndexWriter writer,List<List<String>> documents ){
+		for(List<String> document : documents){
+			try {
+				Document doc = new Document();
+				doc.add(new TextField("title",document.get(0),Field.Store.YES));
+				//Faltaria formatear la date
+				doc.add(new TextField("body",document.get(2),Field.Store.NO));
+	  			doc.add(new StringField("topics",document.get(3),Field.Store.YES));
+			  	//doc.add(new StringField("dateline",document.get(4),Field.Store.YES));
+			  	doc.add(new StringField("hostname",InetAddress.getLocalHost().getHostName(),Field.Store.YES));
+			  	doc.add(new StringField("thread",Thread.currentThread().getName(),Field.Store.YES));
+				
+			  	if(writer.getConfig().getOpenMode() == OpenMode.CREATE){
+			  		writer.addDocument(doc);
+			  	}else if (writer.getConfig().getOpenMode() == OpenMode.APPEND){
+			  		//Comprobar si ya existe
+			  	}
+			  	
+			} catch (UnknownHostException e) {
+				System.out.println("Can't resolve hostname");
+			} catch (IOException  e2){
+				System.out.println("Can't write the document");
+			}
+		}
+	}
+	
+	private static void indexDocs(IndexWriter writer, File file){
 
     	if (file.canRead()){ //SI EL ARCHIVO NO SE PUEDE LEER, NO PODEMOS INDEXARLO
     		//SI SE TRATA DE UN DIRECTORIO HAY QUE RECORRERLO
@@ -61,39 +96,43 @@ public class CollectionIndexer {
     					indexDocs(writer, documents[i]);
     				}
     			}
-    		}else{
+    		}else if(ValidateName(file.getName())==1){
+    			
     			//EN CASO DE QUE SEA UN DOCUMENTO INDIVIDUAL, LO INDEXAMOS
     			//PARA INDEXAR PRIMERO LO ABRIMOS Y CODIFICAMOS
-    			//InputStreamReader pasa de bytes a caracteres, segun codificacion indicada
+    			//InputStreamReader PASA DE BYTES A CARACTERES SEGUN CODIFICACION	
     			InputStreamReader input = openDocument(file);
     			
     			
     			if (input!=null){
-    				//BufferedReader lee texto en un inputStream de caracteres
-    				//y provee una forma eficiente de leerlos por lineas
+    				//BufferedReader LEE UN TEXTO EN FORMATO InputStreamReader
+    				//PROVEE FORMA EFICIENTE DE LECTURA POR LINEAS
     				BufferedReader buffer = new BufferedReader(input);
-    				//StringBuffer es para ir almacenando el contenido
-    				//Funciona parecido a String pero soporta threads
-    				//Es lo que necesita como entrada el parser de Reuters
+    				//StringBuffer ALMACENA EL CONTENIDO
+    				//PARECIDO A STRING PERO SOPORTA THREADS
+    				//ES EL TIPO DE ENTRADA DE PARSER REUTERS
     				StringBuffer fileContent = new StringBuffer();
     				String text = null;
+    				//PREPARAMOS BUFFER PARA DARSELO AL PARSER
     				try {
 						while((text=buffer.readLine()) != null){
 							fileContent.append(text).append("\n");
 						}
+						
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						System.out.println("Failure while reading doc");
 					}
-    					
+    				
+    				//PARSEAMOS EL CONTENIDO DEL DOCUMENTO
+    				//OBTENEMOS UNA LISTA DE LISTAS. UNA LISTA PARA CADA FIELD
+    				List<List<String>> documents = Reuters21578Parser.parseString(fileContent);
+    				
+    				//AÑADIMOS ESTOS FIELDS AL INDICE
+    				addFields(writer, documents);		
+    				
+    				System.out.println("File "+file.getPath()+" procesed ..");
     			}
-    			
-    			
     		}
-    		
-    		
-    		
-    		
     	}
 	}
 	
@@ -170,7 +209,7 @@ public class CollectionIndexer {
 				   + "' does not exist or is not readable, please check the path");
 				   System.exit(1);	    		
 	    	}	
-	    	//indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
+	    	indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
 	    								 //SI ES ARCHIVO FINAL INDEXAMOS, SINO SEGUIMOS BAJANDO 
 	    	
 	    	//CERRAMOS EL INDEXWRITER Y IMPRIMIMOS EL TIEMPO QUE HEMOS TARDADO EN INDEXAR
