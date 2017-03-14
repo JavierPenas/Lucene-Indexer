@@ -8,19 +8,19 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import org.apache.lucene.document.DateTools;
 
 public class Utilities {
 	public static int ValidateName(String s){
-		String s3 = s.substring(s.lastIndexOf(".")+1);
-		if (s3.equals("sgm")){
+		Pattern p = Pattern.compile("reut2-\\d{3}.sgm");
+		if (p.matcher(s).matches()){
 			System.out.println("file: "+s);
 			return 1;
 		}else{
 			return 0;
 		}
-
 	}
 
 

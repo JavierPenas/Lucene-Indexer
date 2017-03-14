@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.Month;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 
@@ -135,7 +136,8 @@ public class CollectionIndexer {
 		//PARAMETROS DE INDEXACION
 		String openmode = "create"; //MODO DE INDEXACION, POR DEFECTO CREATE
 		String indexPath = "index"; //PATH DONDE SE CONSTRUIRA INDICE
-		String docsPath = null; //PATH DONDE ESTA LA COLECCION INDEXABLE
+		//String docsPath = null; //PATH DONDE ESTA LA COLECCION INDEXABLE
+		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
 		
 		//REPASAMOS TODOS LOS PARAMETROS DE ENTRADA PARA RECONOCER LAS OPCIONES
 		for(int i=0;i<args.length;i++) {
@@ -154,25 +156,32 @@ public class CollectionIndexer {
 				indexPath = args[i+1];
 				i++;
 			}else if ("-coll".equals(args[i])) {
-		        docsPath = args[i+1];
+		        docsPaths.add(args[i+1]);
 		        i++;
 		    }else if("-colls".equals(args[i])){
-		    	
+		    	while(!args[i+1].startsWith("-")){
+		    		docsPaths.add(args[i+1]);
+		    		i++;
+		    	}
+		    	i++;
 		    }
 		}
 		
-		//ES OBLIGATORIO PROPORCIONAR EL DIRECTORIO DE LA COLECCION
-	    if (docsPath == null) {
+		//ES OBLIGATORIO PROPORCIONAR AL MENOS UN DIRECTORIO PARA INDEXAR
+	    if (docsPaths.size()== 0) {
 	        System.err.println("Usage: " + usage);
 	        System.exit(1);
 	    }
 	    
-	    //EL DIRECTORIO DE LA COLECCION DEBE SER LEIBLE, SINO TENDREMOS ERRORES MAS ADELANTE
-	    final Path docDir = Paths.get(docsPath);
-	    if (!Files.isReadable(docDir)) {
-	      System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
-	      System.exit(1);
-	    }
+	    //RECORREMOS TODOS LOS DIRECTORIOS INDEXABLES PARA ASEGURARNOS DE QUE SON VALIDOS
+	 /*   for(String dir: docsPaths){
+		    //EL DIRECTORIO DE LA COLECCION DEBE SER LEIBLE, SINO TENDREMOS ERRORES MAS ADELANTE
+		    final Path docDir = Paths.get(dir);
+		    if (!Files.isReadable(docDir)) {
+		      System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
+		      System.exit(1);
+		    }  
+	    }*/
 	    
 	    //PREPARAMOS LA CONFIGURACION DEL INDEXADOR
 	    //ANALYZER; WRITER Y DIRECTORIO
@@ -194,15 +203,17 @@ public class CollectionIndexer {
 	    	
 	    	IndexWriter writer = new IndexWriter(dir, iwc);
 	    	
-	    	File docsDir = new File(docsPath);
-	    	if(!docsDir.exists() || !docsDir.canRead()){
-				   System.out.println("Document directory '" +docsDir.getAbsolutePath()
-				   + "' does not exist or is not readable, please check the path");
-				   System.exit(1);	    		
-	    	}	
-	    	indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
-	    								 //SI ES ARCHIVO FINAL INDEXAMOS, SINO SEGUIMOS BAJANDO 
-	    	
+	    	for(String docPath: docsPaths){
+		    	File docsDir = new File(docPath);
+		    	if(!docsDir.exists() || !docsDir.canRead()){
+					   System.out.println("Document directory '" +docsDir.getAbsolutePath()
+					   + "' does not exist or is not readable, please check the path");
+					   System.exit(1);	    		
+		    	}	
+		    	indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
+		    								 //SI ES ARCHIVO FINAL INDEXAMOS, SINO SEGUIMOS BAJANDO 
+		    		
+	    	}
 	    	//CERRAMOS EL INDEXWRITER Y IMPRIMIMOS EL TIEMPO QUE HEMOS TARDADO EN INDEXAR
 	    	writer.close();
 	    	Date end = new Date();
