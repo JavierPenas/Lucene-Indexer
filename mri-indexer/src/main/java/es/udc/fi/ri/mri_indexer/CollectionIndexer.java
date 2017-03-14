@@ -40,49 +40,7 @@ import org.apache.lucene.store.FSDirectory;
 
 public class CollectionIndexer {
 	
-	private static int ValidateName(String s){
-		String s3 = s.substring(s.lastIndexOf(".")+1);
-		if (s3.equals("sgm")){
-			System.out.println("file: "+s);
-			return 1;
-		}else{
-			return 0;
-		}
 
-	}
-
-
-	private static InputStreamReader openDocument(File file){
-		FileInputStream input = null;
-		try {
-			input = new FileInputStream(file);
-			InputStreamReader in = new InputStreamReader(input, StandardCharsets.UTF_8);
-			return in;
-		} catch (FileNotFoundException e) {
-			return null;
-		}
-		
-		
-	}
-	
-	private static String parseDate(String s){
-		SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss.SS");
-		try {
-			Date date = format.parse(s);
-			String luceneDate = DateTools.dateToString(date, DateTools.Resolution.MILLISECOND);
-			return luceneDate;
-		} catch (ParseException e) {
-			s = "1-FEB-1900 24:00:00.51";
-			try {
-				Date date =  format.parse(s);
-				String luceneDate = DateTools.dateToString(date, DateTools.Resolution.MILLISECOND);
-				return luceneDate;
-			} catch (ParseException e1) {
-				System.out.println("IMPOSIBLE TO PARSE THE DATE");
-			}
-		}
-		return null;
-	}
 	
 	//INDEXAMOS TODOS LOS CAMPOS PARA CADA DOCUMENTO OBTENIDO
 	static void addFields(IndexWriter writer,List<List<String>> documents, File file){
@@ -99,7 +57,7 @@ public class CollectionIndexer {
 			  	doc.add(new StringField("PathSgm",file.getPath(),Field.Store.YES));
 			  	doc.add(new StoredField("seqDocNumber", i));
 			  	i++;
-			  	doc.add(new TextField("date", parseDate(document.get(4)), Field.Store.YES));
+			  	doc.add(new TextField("date", Utilities.parseDate(document.get(4)), Field.Store.YES));
 				
 			  	if(writer.getConfig().getOpenMode() == OpenMode.CREATE){
 			  		writer.addDocument(doc);
@@ -127,12 +85,12 @@ public class CollectionIndexer {
     					indexDocs(writer, documents[i]);
     				}
     			}
-    		}else if(ValidateName(file.getName())==1){
+    		}else if(Utilities.ValidateName(file.getName())==1){
     			
     			//EN CASO DE QUE SEA UN DOCUMENTO INDIVIDUAL, LO INDEXAMOS
     			//PARA INDEXAR PRIMERO LO ABRIMOS Y CODIFICAMOS
     			//InputStreamReader PASA DE BYTES A CARACTERES SEGUN CODIFICACION	
-    			InputStreamReader input = openDocument(file);
+    			InputStreamReader input = Utilities.openDocument(file);
     			
     			
     			if (input!=null){
@@ -198,6 +156,8 @@ public class CollectionIndexer {
 			}else if ("-coll".equals(args[i])) {
 		        docsPath = args[i+1];
 		        i++;
+		    }else if("-colls".equals(args[i])){
+		    	
 		    }
 		}
 		
