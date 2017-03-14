@@ -13,14 +13,23 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.Month;
 import java.util.List;
 import java.util.Date;
 import java.util.LinkedList;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
@@ -45,7 +54,6 @@ public class CollectionIndexer {
 
 	private static InputStreamReader openDocument(File file){
 		FileInputStream input = null;
-		//FALTA VALIDAR NOMBRE
 		try {
 			input = new FileInputStream(file);
 			InputStreamReader in = new InputStreamReader(input, StandardCharsets.UTF_8);
@@ -57,18 +65,41 @@ public class CollectionIndexer {
 		
 	}
 	
+	private static String parseDate(String s){
+		SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss.SS");
+		try {
+			Date date = format.parse(s);
+			String luceneDate = DateTools.dateToString(date, DateTools.Resolution.MILLISECOND);
+			return luceneDate;
+		} catch (ParseException e) {
+			s = "1-FEB-1900 24:00:00.51";
+			try {
+				Date date =  format.parse(s);
+				String luceneDate = DateTools.dateToString(date, DateTools.Resolution.MILLISECOND);
+				return luceneDate;
+			} catch (ParseException e1) {
+				System.out.println("IMPOSIBLE TO PARSE THE DATE");
+			}
+		}
+		return null;
+	}
+	
 	//INDEXAMOS TODOS LOS CAMPOS PARA CADA DOCUMENTO OBTENIDO
-	static void addFields(IndexWriter writer,List<List<String>> documents ){
+	static void addFields(IndexWriter writer,List<List<String>> documents, File file){
+		int i = 1; //PARA POSICION DEL DOC DENTRO DEL ARCHIVO SGM
 		for(List<String> document : documents){
 			try {
 				Document doc = new Document();
 				doc.add(new TextField("title",document.get(0),Field.Store.YES));
-				//Faltaria formatear la date
 				doc.add(new TextField("body",document.get(1),Field.Store.NO));
-	  			doc.add(new StringField("topics",document.get(2),Field.Store.YES));
+	  			doc.add(new TextField("topics",document.get(2),Field.Store.YES));
 			  	doc.add(new StringField("dateline",document.get(3),Field.Store.YES));
 			  	doc.add(new StringField("hostname",InetAddress.getLocalHost().getHostName(),Field.Store.YES));
 			  	doc.add(new StringField("thread",Thread.currentThread().getName(),Field.Store.YES));
+			  	doc.add(new StringField("PathSgm",file.getPath(),Field.Store.YES));
+			  	doc.add(new StoredField("seqDocNumber", i));
+			  	i++;
+			  	doc.add(new TextField("date", parseDate(document.get(4)), Field.Store.YES));
 				
 			  	if(writer.getConfig().getOpenMode() == OpenMode.CREATE){
 			  		writer.addDocument(doc);
@@ -128,7 +159,7 @@ public class CollectionIndexer {
     				List<List<String>> documents = Reuters21578Parser.parseString(fileContent);
     				
     				//AÑADIMOS ESTOS FIELDS AL INDICE
-    				addFields(writer, documents);		
+    				addFields(writer, documents,file);		
     				
     				System.out.println("File "+file.getPath()+" procesed ..");
     			}
