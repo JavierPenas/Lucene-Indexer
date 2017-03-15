@@ -18,6 +18,9 @@ import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.Month;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -33,6 +36,9 @@ import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -50,7 +56,7 @@ public class CollectionIndexer {
 			try {
 				Document doc = new Document();
 				doc.add(new TextField("title",document.get(0),Field.Store.YES));
-				doc.add(new TextField("body",document.get(1),Field.Store.NO));
+				doc.add(new TextField("body",document.get(1),Field.Store.YES));
 	  			doc.add(new TextField("topics",document.get(2),Field.Store.YES));
 			  	doc.add(new StringField("dateline",document.get(3),Field.Store.YES));
 			  	doc.add(new StringField("hostname",InetAddress.getLocalHost().getHostName(),Field.Store.YES));
@@ -74,7 +80,7 @@ public class CollectionIndexer {
 		}
 	}
 	
-	private static void indexDocs(IndexWriter writer, File file){
+	public static void indexDocs(IndexWriter writer, File file){
 
     	if (file.canRead()){ //SI EL ARCHIVO NO SE PUEDE LEER, NO PODEMOS INDEXARLO
     		//SI SE TRATA DE UN DIRECTORIO HAY QUE RECORRERLO
@@ -135,10 +141,11 @@ public class CollectionIndexer {
 		 
 		//PARAMETROS DE INDEXACION
 		String openmode = "create"; //MODO DE INDEXACION, POR DEFECTO CREATE
-		String indexPath = "index"; //PATH DONDE SE CONSTRUIRA INDICE
+		String indexPath = null; //PATH DONDE SE CONSTRUIRA INDICE
 		//String docsPath = null; //PATH DONDE ESTA LA COLECCION INDEXABLE
 		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
-		
+		List<String> indexes1 = new ArrayList<String>(); //ARRAY CON INDICES
+		int indexes2 = 0;
 		//PARAMETROS PROCESADO DE INDICE
 		String indexfile = null;
 		//REPASAMOS TODOS LOS PARAMETROS DE ENTRADA PARA RECONOCER LAS OPCIONES
@@ -165,20 +172,26 @@ public class CollectionIndexer {
 		    		docsPaths.add(args[i+1]);
 		    		i++;
 		    	}
-		    	i++;
-		    }else if("-indexin".equals(args[i])){
-		    	indexfile=args[i+1];
+		    	
+		    }else if ("-indexes1".equals(args[i])){
+		    	while(!args[i+1].startsWith("-")){
+		    		indexes1.add(args[i+1]);
+		    		i++;
+		    	}	
+		    }else if ("-indexes2".equals(args[i])){
+		    	indexPath=args[i+1];
+		    	indexes2= 1;
 		    	i++;
 		    }
 			
 		}
 		
 		//ES OBLIGATORIO PROPORCIONAR AL MENOS UN DIRECTORIO PARA INDEXAR
-	    if (docsPaths.size()== 0) {
-	        System.err.println("Usage: " + usage);
+	    if (docsPaths.size()== 0 || (indexes1.size()==0 && indexPath==null) ) {
+	        System.err.println("Usage 1: " + usage);
 	        System.exit(1);
 	    }
-	    
+
 	    //RECORREMOS TODOS LOS DIRECTORIOS INDEXABLES PARA ASEGURARNOS DE QUE SON VALIDOS
 	 /*   for(String dir: docsPaths){
 		    //EL DIRECTORIO DE LA COLECCION DEBE SER LEIBLE, SINO TENDREMOS ERRORES MAS ADELANTE
@@ -188,53 +201,117 @@ public class CollectionIndexer {
 		      System.exit(1);
 		    }  
 	    }*/
-	    
-	    //PREPARAMOS LA CONFIGURACION DEL INDEXADOR
-	    //ANALYZER; WRITER Y DIRECTORIO
-	    Date start = new Date();
-	    try{
-	    	System.out.println("Indexing to directory "+indexPath+" ...");
-	    	
-	    	Directory dir = FSDirectory.open(Paths.get(indexPath));
-	    	Analyzer analyzer = new StandardAnalyzer();
-	    	IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-	    	
-	    	if (openmode.equals("create")){
-	    		iwc.setOpenMode(OpenMode.CREATE);
-	    	}else if(openmode.equals("append")){
-	    		iwc.setOpenMode(OpenMode.APPEND);
-	    	}else if(openmode.equals("create_or_append")){
-	    		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
-	    	}
-	    	
-	    	IndexWriter writer = new IndexWriter(dir, iwc);
-	    	
-	    	for(String docPath: docsPaths){
-		    	File docsDir = new File(docPath);
-		    	if(!docsDir.exists() || !docsDir.canRead()){
-					   System.out.println("Document directory '" +docsDir.getAbsolutePath()
-					   + "' does not exist or is not readable, please check the path");
-					   System.exit(1);	    		
-		    	}	
-		    	indexDocs(writer,docsDir);  //EN INDEX DOCS DEBEMOS MIRAR SI EL DOCUMENTO PASADO ES UN ARCHIVO FINAL O UN DIRECTORIO
-		    								 //SI ES ARCHIVO FINAL INDEXAMOS, SINO SEGUIMOS BAJANDO 
-		    		
-	    	}
-	    	//CERRAMOS EL INDEXWRITER Y IMPRIMIMOS EL TIEMPO QUE HEMOS TARDADO EN INDEXAR
-	    	writer.close();
-	    	Date end = new Date();
-	    	System.out.println(end.getTime() - start.getTime() + " total milliseconds");
-	    	
-	    }catch (IOException e) {
-	        System.out.println(" caught a " + e.getClass() +
-	        	       "\n with message: " + e.getMessage());
-	    }
-	    
-	    //SI SE HAN INDICADO OPCIONES DE PROCESAMIENTO, SE HACE DESPUES DE HABER INDEXADO
-	    if(indexfile!=null){
-	    	IndexProcesser process = new IndexProcesser(indexfile);
-	    }
-	    
-	    
+	 try{
+		 Directory dir;
+		 if(indexPath==null){
+		    	dir = FSDirectory.open(Paths.get(indexes1.get(0)));
+		 }else{
+			 	dir = FSDirectory.open(Paths.get(indexPath));
+		 }
+    	Analyzer analyzer = new StandardAnalyzer();
+    	IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+	   
+    	if (openmode.equals("create")){
+    		iwc.setOpenMode(OpenMode.CREATE);
+    	}else if(openmode.equals("append")){
+    		iwc.setOpenMode(OpenMode.APPEND);
+    	}else if(openmode.equals("create_or_append")){
+    		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
+    	}
+    	 
+    	IndexWriter writer = new IndexWriter(dir, iwc);
+    	if (indexPath==null){
+    	    indexes1(indexes1,docsPaths,openmode,writer);
+    	}else if(indexes2==0){
+    		index(indexPath,docsPaths,writer);
+    	}else if(indexes2==1){
+    		indexes2(indexPath,docsPaths,writer);
+    	}
+		writer.close();
+	 }catch (IOException e){
+		 
+	 }finally {
+		
 	}
+	}
+	
+private static void index(String indexPath,List<String> docsPaths, IndexWriter writer){
+	for(String docPath: docsPaths){
+		File docsDir = new File(docPath);
+		if(!docsDir.exists()||!docsDir.canRead()){
+			System.out.println("Document directory "+docsDir.getAbsolutePath()+" does not exist or is not readable");
+			System.exit(1);
+		}
+		indexDocs(writer, docsDir);
+	}
+	
+}
+private static void indexes1(List<String> indexes1,List<String> docsPaths, String openmode, IndexWriter writer){
+	 
+	final int numCores = Runtime.getRuntime().availableProcessors();
+	final ExecutorService executor = Executors.newFixedThreadPool(numCores);
+
+	
+	for(int i=1; i<indexes1.size(); i++){
+		String indexP = indexes1.get(i);
+		String docP = docsPaths.get(i-1);
+		final Runnable worker = new WorkerThread(indexP,openmode,docP);
+		executor.execute(worker);
+	}
+	
+	executor.shutdown();
+    try{
+    	executor.awaitTermination(1, TimeUnit.HOURS);
+    }catch(final InterruptedException e){
+    	e.printStackTrace();
+    	System.exit(-2);
+    }
+
+	List<Directory> directories = new ArrayList<Directory>();
+	for(int i=1; i<indexes1.size(); i++){
+		Directory directory = null;
+		//DirectoryReader indexReader = null;
+		String path = indexes1.get(i);
+		try{
+			directory = FSDirectory.open(Paths.get(path));
+			//indexReader = DirectoryReader.open(dir);
+			directories.add(directory);
+		}catch (CorruptIndexException e1){
+			System.out.println("Graceful message: exception"+ e1);
+			e1.printStackTrace();
+		}catch (IOException e1){
+			System.out.println("Graceful message: exception"+ e1);
+			e1.printStackTrace();
+		}
+	}
+
+   	Directory[] dirs= directories.toArray(new Directory[directories.size()]);
+	try {
+		writer.addIndexes(dirs);
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+}
+
+private static void indexes2 (String indexPath,List<String> docsPaths, IndexWriter writer){
+	final int numCores = Runtime.getRuntime().availableProcessors();
+	final ExecutorService executor = Executors.newFixedThreadPool(numCores);
+
+	
+	for(int i=0; i<docsPaths.size(); i++){
+		String docP = docsPaths.get(i);
+		final Runnable worker = new WorkerThread2(docP,writer);
+		executor.execute(worker);
+	}
+	
+	executor.shutdown();
+    try{
+    	executor.awaitTermination(1, TimeUnit.HOURS);
+    }catch(final InterruptedException e){
+    	e.printStackTrace();
+    	System.exit(-2);
+    }
+
+}
 }
