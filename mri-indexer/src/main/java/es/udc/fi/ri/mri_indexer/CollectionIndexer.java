@@ -139,6 +139,8 @@ public class CollectionIndexer {
 		//String docsPath = null; //PATH DONDE ESTA LA COLECCION INDEXABLE
 		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
 		
+		//PARAMETROS PROCESADO DE INDICE
+		String indexfile = null;
 		//REPASAMOS TODOS LOS PARAMETROS DE ENTRADA PARA RECONOCER LAS OPCIONES
 		for(int i=0;i<args.length;i++) {
 			if("-openmode".equals(args[i])){
@@ -164,7 +166,11 @@ public class CollectionIndexer {
 		    		i++;
 		    	}
 		    	i++;
+		    }else if("-indexin".equals(args[i])){
+		    	indexfile=args[i+1];
+		    	i++;
 		    }
+			
 		}
 		
 		//ES OBLIGATORIO PROPORCIONAR AL MENOS UN DIRECTORIO PARA INDEXAR
@@ -224,8 +230,10 @@ public class CollectionIndexer {
 	        	       "\n with message: " + e.getMessage());
 	    }
 	    
-	    
-	    
+	    //SI SE HAN INDICADO OPCIONES DE PROCESAMIENTO, SE HACE DESPUES DE HABER INDEXADO
+	    if(indexfile!=null){
+	    	IndexProcesser process = new IndexProcesser(indexfile);
+	    }
 	    
 	    
 	}
