@@ -38,6 +38,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -48,20 +49,29 @@ import org.apache.lucene.store.FSDirectory;
 public class CollectionIndexer {
 	
 
-	
+	public static final FieldType TYPE_STORED = new FieldType();
+	static final IndexOptions options = IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+	static{
+		TYPE_STORED.setIndexOptions(options);
+		TYPE_STORED.setTokenized(true);
+		TYPE_STORED.setStored(true);
+		TYPE_STORED.setStoreTermVectors(true);
+		TYPE_STORED.setStoreTermVectorPositions(true);
+		TYPE_STORED.freeze();
+	}
 	//INDEXAMOS TODOS LOS CAMPOS PARA CADA DOCUMENTO OBTENIDO
 	static void addFields(IndexWriter writer,List<List<String>> documents, File file){
 		int i = 1; //PARA POSICION DEL DOC DENTRO DEL ARCHIVO SGM
 		for(List<String> document : documents){
 			try {
 				Document doc = new Document();
-				doc.add(new TextField("title",document.get(0),Field.Store.YES));
-				doc.add(new TextField("body",document.get(1),Field.Store.YES));
-	  			doc.add(new TextField("topics",document.get(2),Field.Store.YES));
-			  	doc.add(new StringField("dateline",document.get(3),Field.Store.YES));
-			  	doc.add(new StringField("hostname",InetAddress.getLocalHost().getHostName(),Field.Store.YES));
-			  	doc.add(new StringField("thread",Thread.currentThread().getName(),Field.Store.YES));
-			  	doc.add(new StringField("PathSgm",file.getPath(),Field.Store.YES));
+				doc.add(new Field("title",document.get(0),TYPE_STORED));
+				doc.add(new Field("body",document.get(1),TYPE_STORED));
+	  			doc.add(new Field("topics",document.get(2),TYPE_STORED));
+			  	doc.add(new Field("dateline",document.get(3),TYPE_STORED));
+			  	doc.add(new Field("hostname",InetAddress.getLocalHost().getHostName(),TYPE_STORED));
+			  	doc.add(new Field("thread",Thread.currentThread().getName(),TYPE_STORED));
+			  	doc.add(new Field("PathSgm",file.getPath(),TYPE_STORED));
 			  	doc.add(new StoredField("seqDocNumber", i));
 			  	i++;
 			  	doc.add(new TextField("date", Utilities.parseDate(document.get(4)), Field.Store.YES));
@@ -142,10 +152,19 @@ public class CollectionIndexer {
 		//PARAMETROS DE INDEXACION
 		String openmode = "create"; //MODO DE INDEXACION, POR DEFECTO CREATE
 		String indexPath = null; //PATH DONDE SE CONSTRUIRA INDICE
+		String indexin = null; //PATH DONDE ESTA INDICE PARA PROCESAR
 		//String docsPath = null; //PATH DONDE ESTA LA COLECCION INDEXABLE
 		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
 		List<String> indexes1 = new ArrayList<String>(); //ARRAY CON INDICES
-		int indexes2 = 0;
+		
+		int indexes2 = 0; //ACTIVACION OPCION INDEXES2
+		int best_idfterms = 0; //ACTIVACION BEST_IDF
+		int poor_idfterms = 0; //ACTIVACION POOR_IDF
+		int best_tfidfterms= 0; //ACTIVACION BEST TFIDF
+		
+		String field = null;
+		int n = 0; //NUMERO RESULTADOS ESPERADOS
+		
 		//PARAMETROS PROCESADO DE INDICE
 		String indexfile = null;
 		//REPASAMOS TODOS LOS PARAMETROS DE ENTRADA PARA RECONOCER LAS OPCIONES
@@ -182,6 +201,24 @@ public class CollectionIndexer {
 		    	indexPath=args[i+1];
 		    	indexes2= 1;
 		    	i++;
+		    }else if ("-indexin".equals(args[i])){
+		    	indexin= args[i+1];
+		    	i++;
+		    }else if("-best_idfterms".equals(args[i])){
+		    	field = args[i+1];
+		    	n = Integer.parseInt(args[i+2]);
+		    	best_idfterms=1;
+		    	i+=2;
+		    }else if("-poor_idfterms".equals(args[i])){
+		    	field = args[i+1];
+		    	n = Integer.parseInt(args[i+2]);
+		    	poor_idfterms = 1;
+		    	i+=2;
+		    }else if("-best_tfidfterms".equals(args[i])){
+		    	field = args[i+1];
+		    	n = Integer.parseInt(args[i+2]);
+		    	best_tfidfterms = 1;
+		    	i+=2;
 		    }
 			
 		}
@@ -228,12 +265,24 @@ public class CollectionIndexer {
     		indexes2(indexPath,docsPaths,writer);
     	}
 		writer.close();
+		
+		//YA SE HA TERMINADO DE INDEXAR, SE PASA A PROCESAMIENTO
+		IndexProcesser processer = new IndexProcesser(indexin);
+		if(best_idfterms==1){
+			processer.bestIdfTerms(field, n);
+		}
+		if(poor_idfterms==1){
+			processer.poorIdfTerms(field, n);
+		}
+		if(best_tfidfterms==1){
+			processer.bestTfIdfTerms(field, n);
+		}
+		
+		
 	 }catch (IOException e){
 		 
-	 }finally {
-		
-	}
-	}
+	 }
+}
 	
 private static void index(String indexPath,List<String> docsPaths, IndexWriter writer){
 	for(String docPath: docsPaths){
