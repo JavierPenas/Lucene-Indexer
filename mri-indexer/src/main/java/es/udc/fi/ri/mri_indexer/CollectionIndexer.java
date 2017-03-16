@@ -161,7 +161,9 @@ public class CollectionIndexer {
 		int best_idfterms = 0;
 		int poor_idfterms = 0;
 		int best_tfidfterms = 0;
+		int poor_tfidfterms = 0;
 		int indexar = 0;
+		int procesar = 0;
 		
 		//PARAMETROS DE INDEXACION
 		String openmode = "create"; //MODO DE INDEXACION, POR DEFECTO CREATE
@@ -214,6 +216,7 @@ public class CollectionIndexer {
 		    	i++;
 		    }else if ("-indexin".equals(args[i])){
 		    	indexin= args[i+1];
+		    	procesar =1;
 		    	i++;
 		    }else if("-best_idfterms".equals(args[i])){
 		    	field = args[i+1];
@@ -230,6 +233,11 @@ public class CollectionIndexer {
 		    	n = Integer.parseInt(args[i+2]);
 		    	best_tfidfterms = 1;
 		    	i+=2;
+		    }else if("-poor_tfidfterms".equals(args[i])){
+		    	field = args[i+1];
+		    	n = Integer.parseInt(args[i+2]);
+		    	poor_tfidfterms = 1;
+		    	i+=2;
 		    }
 			
 		}
@@ -243,6 +251,24 @@ public class CollectionIndexer {
 	    		indexes2(indexPath,docsPaths);
 	    	}
 		}
+		
+		if(procesar==1){
+			IndexProcesser processer = new IndexProcesser(indexin);
+			if(best_idfterms==1){
+				processer.bestIdfTerms(field, n);
+			}
+			if(poor_idfterms==1){
+				processer.poorIdfTerms(field, n);
+			}
+			if(best_tfidfterms==1){
+				processer.bestTfIdfTerms(field, n);
+			}
+			if(poor_tfidfterms==1){
+				
+			}
+		}
+		
+		
 
 }
 	
