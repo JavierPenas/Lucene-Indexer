@@ -98,6 +98,7 @@ public class IndexConstructor {
 			while((s=it.next())!=null){
 				arrayFields[i] = s;
 				bool[i] =  BooleanClause.Occur.MUST;
+				//dfghjl
 				i++;
 			}
 			
