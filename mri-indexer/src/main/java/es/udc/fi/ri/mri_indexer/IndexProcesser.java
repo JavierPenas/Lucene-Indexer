@@ -31,6 +31,7 @@ import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -145,7 +146,7 @@ public class IndexProcesser {
 		}
 	}
 	
-	private List<TfIdfObject> leafReader(IndexReader indexReader,String field){
+	/*private List<TfIdfObject> leafReader(IndexReader indexReader,String field){
 		for (final LeafReaderContext leaf : indexReader.leaves()) {
 			// Print leaf number (starting from zero)
 			System.out.println("We are in the leaf number " + leaf.ord);
@@ -170,8 +171,7 @@ public class IndexProcesser {
 					int df_t = termsEnum.docFreq(); //NUMERO DE DOCUMENTOS DONDE APARECE EL TERMINO
 					double idf = Math.log10(N/df_t); //CALCULO IDF DEL TERMINO
 					final String tt = termsEnum.term().utf8ToString();
-					/*System.out.println("\t" + tt + "\ttotalFreq()=" + termsEnum.totalTermFreq() + "\tdocFreq="
-							+ termsEnum.docFreq());*/
+
 					int doc;
 					Term term = new Term(field, termsEnum.term());
 					final PostingsEnum postingsEnum = leafReader.postings(term);
@@ -191,6 +191,35 @@ public class IndexProcesser {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+		return null;
+	}*/
+	private List<TfIdfObject> leafReader(IndexReader indexReader,String field){
+		try{
+			Fields fields = MultiFields.getFields(indexReader);
+			Terms terms = fields.terms(field);
+			final TermsEnum termsEnum = terms.iterator();
+			List<TfIdfObject> tfIdfList = new ArrayList<TfIdfObject>();
+			int N = indexReader.numDocs();
+			while(termsEnum.next()!=null){
+				int df_t = termsEnum.docFreq(); //NUMERO DE DOCUMENTOS DONDE APARECE EL TERMINO
+				double idf = Math.log10(N/df_t); //CALCULO IDF DEL TERMINO
+				PostingsEnum postingsEnum = MultiFields.getTermDocsEnum(indexReader,field, termsEnum.term(), PostingsEnum.FREQS);
+				int i;
+				while((i=postingsEnum.nextDoc())!= PostingsEnum.NO_MORE_DOCS){
+				  Document doc = indexReader.document(i);
+				  double tf;
+				  if(postingsEnum.freq()==0){
+					  tf = 0;
+				  }else{
+					  tf = 1 + Math.log10(postingsEnum.freq());
+				  }
+				  tfIdfList.add(new TfIdfObject(tf, df_t, idf, i, termsEnum.term().utf8ToString())); 
+				}
+			}
+			return tfIdfList;
+		}catch(IOException e){
+			e.printStackTrace();
 		}
 		return null;
 	}
