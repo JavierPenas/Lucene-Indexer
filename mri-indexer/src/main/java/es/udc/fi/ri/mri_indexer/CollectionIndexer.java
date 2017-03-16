@@ -164,6 +164,7 @@ public class CollectionIndexer {
 		int poor_tfidfterms = 0;
 		int indexar = 0;
 		int procesar = 0;
+		int reindexar = 0;
 		
 		//PARAMETROS DE INDEXACION
 		String openmode = "create"; //MODO DE INDEXACION, POR DEFECTO CREATE
@@ -176,7 +177,19 @@ public class CollectionIndexer {
 		//PARAMETROS PROCESADO DE INDICE
 		String indexin = null;
 		String field = null;
+		String query = null;
 		int n = 0;
+		
+		//PARAMETROS PROCESADO Y RE-CREACION DE INDICE
+		String indexout = null;
+		String term = null;
+		int hilos = 1;
+		int mostsimilardoc_body = 0;
+		int mostsimilardoc_title = 0;
+		int deldocsquery = 0;
+		int deldocsterm = 0;
+		
+		
 		//REPASAMOS TODOS LOS PARAMETROS DE ENTRADA PARA RECONOCER LAS OPCIONES
 		for(int i=0;i<args.length;i++) {
 			if("-openmode".equals(args[i])){
@@ -238,6 +251,28 @@ public class CollectionIndexer {
 		    	n = Integer.parseInt(args[i+2]);
 		    	poor_tfidfterms = 1;
 		    	i+=2;
+		    }else if("-indexout".equals(args[i])){
+		    	indexout= args[i+1];
+		    	reindexar = 1;
+		    	i++;
+		    }else if("-deldocsterm".equals(args[i])){
+		    	field = args[i+1];
+		    	term = args[i+2];
+		    	deldocsterm = 1;
+		    	i+=2;
+		    }else if("-deldocsquery".equals(args[i])){
+		    	query = args[i+1];
+		    	deldocsquery = 1;
+		    	i++;
+		    }else if("-mostsimilardoc_title".equals(args[i])){
+		    	hilos = Integer.parseInt(args[i+1]);
+		    	mostsimilardoc_title = 1;
+		    	i++;
+		    }else if("-mostsimilardoc_body".equals(args[i])){
+		    	n = Integer.parseInt(args[i+1]);
+		    	hilos = Integer.parseInt(args[i+2]);
+		    	mostsimilardoc_body = 1;
+		    	i+=2;
 		    }
 			
 		}
@@ -265,6 +300,22 @@ public class CollectionIndexer {
 			}
 			if(poor_tfidfterms==1){
 				processer.poorTfIdfTerms(field, n);
+			}
+		}
+		
+		if(reindexar==1){
+			IndexConstructor constructor = new IndexConstructor(indexout, indexin);
+			if(deldocsterm==1){
+				constructor.deldocsterm(field, term);
+			}
+			if(deldocsquery==1){
+				
+			}
+			if(mostsimilardoc_title==1){
+				
+			}
+			if(mostsimilardoc_body==1){
+				
 			}
 		}
 		
