@@ -25,6 +25,9 @@ public class TfIdfObject implements Comparable<TfIdfObject> {
 	public int getdf(){
 		return this.df;
 	}
+	public int getDocId(){
+		return this.docId;
+	}
 	
 	public int compareTo(TfIdfObject o1) {
 		if((this.tfIdf)>(o1.getTfIdf())){

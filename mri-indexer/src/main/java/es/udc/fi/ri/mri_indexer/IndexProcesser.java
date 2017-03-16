@@ -87,6 +87,20 @@ public class IndexProcesser {
 		return list;
 	}
 	
+	private static List<TfIdfObject> orderTdIdfMin(List<TfIdfObject> list){
+		
+		Collections.sort( list, new Comparator<TfIdfObject>()
+        {
+			
+            public int compare( TfIdfObject o1, TfIdfObject o2 )
+            {
+            	return (o1.getTfIdf().compareTo(o2.getTfIdf()));
+            }
+            
+        } );
+		return list;
+	}
+	
 	private Map<String, Double> calculateIdfTerms(String field){
 		DirectoryReader indexReader = null;
 		Directory dir = null;
@@ -145,55 +159,7 @@ public class IndexProcesser {
 			i++;
 		}
 	}
-	
-	/*private List<TfIdfObject> leafReader(IndexReader indexReader,String field){
-		for (final LeafReaderContext leaf : indexReader.leaves()) {
-			// Print leaf number (starting from zero)
-			System.out.println("We are in the leaf number " + leaf.ord);
 
-			// Create an AtomicReader for each leaf
-			// (using, again, Java 7 try-with-resources syntax)
-			try (LeafReader leafReader = leaf.reader()) {
-
-				// Get the fields contained in the current segment/leaf
-				final Fields fields = leafReader.fields();
-				System.out.println("Numero de campos devuelto por leafReader.fields() = " + fields.size());
-
-
-				System.out.println("Field = " + field);
-				int N = indexReader.numDocs();
-				final Terms terms = fields.terms(field);
-				final TermsEnum termsEnum = terms.iterator();
-				List<TfIdfObject> tfIdfList = new ArrayList<TfIdfObject>();
-				
-				//RECORREMOS TODOS LOS TERMINOS PARA EL CAMPO FIELD
-				while (termsEnum.next() != null) {
-					int df_t = termsEnum.docFreq(); //NUMERO DE DOCUMENTOS DONDE APARECE EL TERMINO
-					double idf = Math.log10(N/df_t); //CALCULO IDF DEL TERMINO
-					final String tt = termsEnum.term().utf8ToString();
-
-					int doc;
-					Term term = new Term(field, termsEnum.term());
-					final PostingsEnum postingsEnum = leafReader.postings(term);
-					while ((doc = postingsEnum.nextDoc()) != PostingsEnum.NO_MORE_DOCS) {
-						final Document d = leafReader.document(doc); //DOC ES EL ID DE DOCUMENTO, d ES EL DOCUMENTO
-						double tf;
-						if(postingsEnum.freq()==0){
-							tf=0;
-						}else{
-							tf=1+Math.log10(postingsEnum.freq());
-						}
-						tfIdfList.add(new TfIdfObject(tf,df_t, idf, doc, tt));
-					}
-				}
-				return tfIdfList;
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return null;
-	}*/
 	private List<TfIdfObject> leafReader(IndexReader indexReader,String field){
 		try{
 			Fields fields = MultiFields.getFields(indexReader);
@@ -244,6 +210,27 @@ public class IndexProcesser {
 			System.out.println(orderedlist.get(i).toString());
 		}
 
+	}
+	
+	public void poorTfIdfTerms(String field, int n){
+		DirectoryReader indexReader = null;
+		Directory dir = null;
+		try{
+			dir = FSDirectory.open(Paths.get(indexFile));
+			indexReader = DirectoryReader.open(dir);
+		}catch(CorruptIndexException e1){
+			System.out.println("Gracefull message: Exception"+e1);
+			e1.printStackTrace();
+		}catch (IOException e1){
+			System.out.println("Gracefull message: Exception"+e1);
+			e1.printStackTrace();
+		}
+		List<TfIdfObject> tfIdfList = leafReader(indexReader, field);
+		List<TfIdfObject> orderedlist = orderTdIdfMin(tfIdfList);
+
+		for(int i= 0; i<n; i++){
+			System.out.println(orderedlist.get(i).toString());
+		}
 	}
 	
 }

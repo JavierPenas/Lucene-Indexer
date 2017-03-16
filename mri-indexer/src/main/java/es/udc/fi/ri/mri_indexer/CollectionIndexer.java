@@ -264,7 +264,7 @@ public class CollectionIndexer {
 				processer.bestTfIdfTerms(field, n);
 			}
 			if(poor_tfidfterms==1){
-				
+				processer.poorTfIdfTerms(field, n);
 			}
 		}
 		
