@@ -39,11 +39,10 @@ public class WorkerThread implements Runnable {
 				  System.exit(1);	    		
 		}
 		try{
-			 Directory dir= FSDirectory.open(Paths.get(indexPath));
-	
+			Directory dir= FSDirectory.open(Paths.get(indexPath));
 	    	Analyzer analyzer = new StandardAnalyzer();
 	    	IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-		   
+
 	    	if (openmode.equals("create")){
 	    		iwc.setOpenMode(OpenMode.CREATE);
 	    	}else if(openmode.equals("append")){
