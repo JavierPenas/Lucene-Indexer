@@ -309,7 +309,7 @@ public class CollectionIndexer {
 				constructor.deldocsterm(field, term);
 			}
 			if(deldocsquery==1){
-				
+				constructor.deldocsquery(query);
 			}
 			if(mostsimilardoc_title==1){
 				

@@ -20,7 +20,9 @@ import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -34,13 +36,13 @@ public class IndexConstructor {
 		this.indexout = indexout;
 	}
 	
-	private IndexWriter createWriter(){
+	private IndexWriter createWriter(String index){
 		try{
 			Directory dir;
-			dir = FSDirectory.open(Paths.get(indexin));
+			dir = FSDirectory.open(Paths.get(index));
 			Analyzer analyzer = new StandardAnalyzer();
 			IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-			iwc.setOpenMode(OpenMode.APPEND);
+			iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 			IndexWriter writer = new IndexWriter(dir, iwc);
 			return writer;
 		 }catch (IOException e){
@@ -62,8 +64,9 @@ public class IndexConstructor {
 		return null;
 	}
 	
+	
 	public void deldocsterm(String field, String termino){
-		IndexWriter writer = createWriter();
+		IndexWriter writer = createWriter(indexin);
 		try{
 			Term term = new Term(field, termino);
 			System.out.println("delete term "+termino+" "+field);
@@ -87,45 +90,32 @@ public class IndexConstructor {
 	
 	public void deldocsquery(String squery){
 		IndexReader reader = createReader();
-		IndexWriter writer = createWriter();
+		IndexWriter writer = createWriter(indexin);
+		IndexSearcher searcher = new IndexSearcher(reader);
 		try {
 			Fields fields = MultiFields.getFields(reader);
-			String [] arrayFields = new String[fields.size()];
-			BooleanClause.Occur [] bool = new BooleanClause.Occur [fields.size()];
+			//String [] arrayFields = new String[fields.size()];
 			Iterator<String> it = fields.iterator();
-			String s; 
-			int i = 0;
-			while((s=it.next())!=null){
-				arrayFields[i] = s;
-				bool[i] =  BooleanClause.Occur.MUST;
-				//dfghjl
-				i++;
-			}
-			
-			try {
-				Query query = MultiFieldQueryParser.parse(squery, arrayFields,bool,new StandardAnalyzer());
+			while(it.hasNext()){
+				//arrayFields[i] = it.next();
+				QueryParser parser = new QueryParser(it.next(), new StandardAnalyzer());
+				Query query = parser.parse(squery);
 				writer.deleteDocuments(query);
 				writer.forceMergeDeletes();
-			} catch (ParseException e) {
-				e.printStackTrace();
 			}
-			
-			try{
-				writer.commit();
-				writer.close();
+			writer.commit();
+			writer.close();
 			}catch (CorruptIndexException e) {
 				System.out.println("Graceful message: exception "+e);
 				e.printStackTrace();
 			}catch (IOException e) {
 				System.out.println("Graceful message: exception "+e);
 				e.printStackTrace();
+			}catch(ParseException e){
+				System.out.println("Graceful message: exception "+e);
+				e.printStackTrace();
 			}
 			
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 }
