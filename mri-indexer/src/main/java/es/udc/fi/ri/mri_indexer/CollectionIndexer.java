@@ -312,7 +312,7 @@ public class CollectionIndexer {
 				constructor.deldocsquery(query);
 			}
 			if(mostsimilardoc_title==1){
-				
+				constructor.mostsimilardocTitle(hilos);
 			}
 			if(mostsimilardoc_body==1){
 				
