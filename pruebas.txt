@@ -1,0 +1,126 @@
+-index C:\Users\Javier\Desktop\RI\index -coll C:\Users\Javier\Desktop\RI\reuters215782 -openmode create
+-indexes1 C:\Users\Javier\Desktop\RI\index C:\Users\Javier\Desktop\RI\subindex1 C:\Users\Javier\Desktop\RI\subindex2 -colls C:\Users\Javier\Desktop\RI\reuters21578 C:\Users\Javier\Desktop\RI\d2 -openmode create
+-indexes2 C:\Users\Javier\Desktop\RI\index -colls C:\Users\Javier\Desktop\RI\reuters21578 C:\Users\Javier\Desktop\RI\d2 -openmode create
+-indexin C:\Users\Javier\Desktop\RI\index -best_idfterms title 5
+-indexin C:\Users\Javier\Desktop\RI\index -poor_idfterms title 5
+-indexin C:\Users\Javier\Desktop\RI\index -best_tfidfterms title 5
+-indexin C:\Users\Javier\Desktop\RI\index -poor_tfidfterms title 5
+
+INDEXACION SIMPLE:
+-index C:\Users\Javier\Desktop\RI\indexes\index0 -colls C:\Users\Javier\Desktop\RI\reuters21578 C:\Users\Javier\Desktop\RI\d2 -openmode create
+Docs: 21578
+Terms: 100735
+-indexes1 C:\Users\Javier\Desktop\RI\indexes\index1 C:\Users\Javier\Desktop\RI\subindex1 C:\Users\Javier\Desktop\RI\subindex2 -colls C:\Users\Javier\Desktop\RI\reuters21578 C:\Users\Javier\Desktop\RI\d2 -openmode create
+Docs: 21578
+Terms: 100736
+-indexes2 C:\Users\Javier\Desktop\RI\indexes\index2 -colls C:\Users\Javier\Desktop\RI\reuters21578 C:\Users\Javier\Desktop\RI\d2 -openmode create
+Docs: 21578
+Terms: 100736
+
+//***********************************************************************************//
+
+SEGUNDO BLOQUE
+-indexin C:\Users\Javier\Desktop\RI\indexes\index0 -best_idfterms title 5
+
+TERMINO: undermining VALOR: 4.334011188761349
+TERMINO: azpurua VALOR: 4.334011188761349
+TERMINO: 122,000 VALOR: 4.334011188761349
+TERMINO: bbank VALOR: 4.334011188761349
+TERMINO: ccn VALOR: 4.334011188761349
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index1 -best_idfterms title 5
+
+TERMINO: undermining VALOR: 4.334011188761349
+TERMINO: azpurua VALOR: 4.334011188761349
+TERMINO: 122,000 VALOR: 4.334011188761349
+TERMINO: bbank VALOR: 4.334011188761349
+TERMINO: ccn VALOR: 4.334011188761349
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index2 -best_idfterms title 5
+
+TERMINO: undermining VALOR: 4.334011188761349
+TERMINO: azpurua VALOR: 4.334011188761349
+TERMINO: 122,000 VALOR: 4.334011188761349
+TERMINO: bbank VALOR: 4.334011188761349
+TERMINO: ccn VALOR: 4.334011188761349
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index0 -poor_idfterms title 5
+
+TERMINO: lt VALOR: 0.3010299956639812
+TERMINO: qtr VALOR: 1.0
+TERMINO: net VALOR: 1.1139433523068367
+TERMINO: inc VALOR: 1.146128035678238
+TERMINO: u.s VALOR: 1.146128035678238
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index1 -poor_idfterms title 5
+
+TERMINO: lt VALOR: 0.3010299956639812
+TERMINO: qtr VALOR: 1.0
+TERMINO: net VALOR: 1.1139433523068367
+TERMINO: inc VALOR: 1.146128035678238
+TERMINO: u.s VALOR: 1.146128035678238
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index2 -poor_idfterms title 5
+
+TERMINO: lt VALOR: 0.3010299956639812
+TERMINO: qtr VALOR: 1.0
+TERMINO: net VALOR: 1.1139433523068367
+TERMINO: inc VALOR: 1.146128035678238
+TERMINO: u.s VALOR: 1.146128035678238
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index0 -best_tfidfterms title 5
+
+TfIdfObject [tf=1.4771212547196624 df= 1, idf=4.334011188761349, docId=8507, term=5.55, tfIdf=6.40186004511222]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=788, term=5.51, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=5698, term=5.58, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=4527, term=5.68, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=9573, term=6.79, tfIdf=5.638678558121824]
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index1 -best_tfidfterms title 5
+
+TfIdfObject [tf=1.4771212547196624 df= 1, idf=4.334011188761349, docId=8507, term=5.55, tfIdf=6.40186004511222]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=788, term=5.51, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=5698, term=5.58, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=4527, term=5.68, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=9573, term=6.79, tfIdf=5.638678558121824]
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index2 -best_tfidfterms title 5
+
+TfIdfObject [tf=1.4771212547196624 df= 1, idf=4.334011188761349, docId=16567, term=5.55, tfIdf=6.40186004511222]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=789, term=5.51, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=12439, term=5.58, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=11135, term=5.68, tfIdf=5.638678558121824]
+TfIdfObject [tf=1.3010299956639813 df= 1, idf=4.334011188761349, docId=20151, term=6.79, tfIdf=5.638678558121824]
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index0 -poor_tfidfterms title 5
+
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=1, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=2, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=3, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=7, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=8, term=lt, tfIdf=0.3010299956639812]
+
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index1 -poor_tfidfterms title 5
+
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=1, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=2, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=3, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=7, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=8, term=lt, tfIdf=0.3010299956639812]
+
+-indexin C:\Users\Javier\Desktop\RI\indexes\index2 -poor_tfidfterms title 5
+
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=0, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=1, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=2, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=3, term=lt, tfIdf=0.3010299956639812]
+TfIdfObject [tf=1.0 df= 9281, idf=0.3010299956639812, docId=4, term=lt, tfIdf=0.3010299956639812]
+
+//***********************************************************************************************//
+
+-index C:\Users\Javier\Desktop\RI\indexes\smallindex -coll C:\Users\Javier\Desktop\RI\CONSTRUCTOR\docs -openmode create
+-indexin C:\Users\Javier\Desktop\RI\indexes\smallindex -indexout C:\Users\Javier\Desktop\RI\indexes\smallindex -deldocsterm title commerce
+-indexin C:\Users\Javier\Desktop\RI\indexes\smallindex -indexout C:\Users\Javier\Desktop\RI\indexes\smallindex -deldocsquery 'Bahia Cocoa'
+-indexin C:\Users\Javier\Desktop\RI\indexes\smallindex  -indexout  C:\Users\Javier\Desktop\RI\indexes\indexout0 -mostsimilardoc_title 3
+-indexin C:\Users\Javier\Desktop\RI\indexes\smallindex  -indexout  C:\Users\Javier\Desktop\RI\indexes\indexout0 -mostsimilardoc_body 2 3
