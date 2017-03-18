@@ -138,6 +138,7 @@ public class BodyIndexConstructorThread implements Runnable {
 						ScoreDoc score = hits[1];
 						Document simDoc = searcher.doc(score.doc);
 						//System.out.println("Similar docs to "+id+" : "+score.doc+" with path: "+simDoc.getField("PathSgm").stringValue());
+						doc.add(new Field("SimQuery",query.toString(),TYPE_STORED));;
 						doc.add(new Field("SimPathSgm",simDoc.getField("PathSgm").stringValue(),TYPE_STORED));
 						doc.add(new Field("SimTitle",simDoc.getField("title").stringValue(),TYPE_STORED));
 						doc.add(new Field("SimBody",simDoc.getField("body").stringValue(),TYPE_STORED));
