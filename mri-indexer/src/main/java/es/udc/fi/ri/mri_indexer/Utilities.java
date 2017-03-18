@@ -38,7 +38,7 @@ public class Utilities {
 	}
 	
 	public static String parseDate(String s){
-		SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss.SS");
+		SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss.sss");
 		try {
 			Date date = format.parse(s);
 			String luceneDate = DateTools.dateToString(date, DateTools.Resolution.MILLISECOND);
