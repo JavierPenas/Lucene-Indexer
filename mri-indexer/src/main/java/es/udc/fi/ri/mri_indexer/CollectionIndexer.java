@@ -315,7 +315,7 @@ public class CollectionIndexer {
 				constructor.mostsimilardocTitle(hilos);
 			}
 			if(mostsimilardoc_body==1){
-				
+				constructor.mostsimilardocBody(n,hilos);
 			}
 		}
 		

@@ -18,6 +18,10 @@ public class TfIdfObject implements Comparable<TfIdfObject> {
 		this.df = df;
 		this.tfIdf = tf*idf;
 	}
+	
+	public String getTerm(){
+		return this.term;
+	}
 
 	public Double getTfIdf(){
 		return this.tfIdf;

@@ -181,4 +181,62 @@ public class IndexConstructor {
 
 	}
 	
+	
+	public void mostsimilardocBody(int n,int hilos){
+		IndexReader reader = createReader();
+		Directory dir;
+		try {
+			dir = FSDirectory.open(Paths.get(indexout));
+			Analyzer analyzer = new StandardAnalyzer();
+			IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+			iwc.setOpenMode(OpenMode.CREATE);		
+			IndexWriter writer;
+			writer = new IndexWriter(dir, iwc);
+	
+			IndexSearcher searcher = new IndexSearcher(reader);
+			
+			int [] pDocs = new int[hilos];
+			int totalDocs = reader.numDocs();
+			int docsPorHilo = Math.floorDiv(totalDocs,hilos); //Documentos a procesar por cada hilo
+			
+			for(int hilo=0; hilo<hilos; hilo++){
+				pDocs[hilo]=docsPorHilo;
+			}
+			if((totalDocs%hilos)!=0){
+				pDocs[0]+=1;
+			}
+			
+			final ExecutorService executor = Executors.newFixedThreadPool(hilos);
+			int docIni = 0;
+			int docFin = 0;
+			for(int hilo=0; hilo<hilos; hilo++){
+			
+				if(hilo ==0){
+						docIni = 0;
+						docFin = pDocs[0]-1;
+				}else{
+						docIni = docIni+pDocs[hilo-1];
+						docFin = docFin+pDocs[hilo];
+				}
+				System.out.println("THREAD "+hilo+" INI "+docIni+" FIN "+docFin);
+				final Runnable worker = new BodyIndexConstructorThread(indexin, writer, reader, searcher, docIni, docFin, n);
+				executor.execute(worker);
+			}
+			executor.shutdown();
+		    executor.awaitTermination(1, TimeUnit.HOURS);
+
+		    writer.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		
+
+	}
+
+	
+	
+	
 }
