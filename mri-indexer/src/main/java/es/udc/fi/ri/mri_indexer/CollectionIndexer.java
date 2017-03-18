@@ -68,6 +68,8 @@ public class CollectionIndexer {
 		TYPE_STORED2.setStoreTermVectorPositions(true);
 		TYPE_STORED2.freeze();
 	}
+	
+	//addFields
 	//INDEXAMOS TODOS LOS CAMPOS PARA CADA DOCUMENTO OBTENIDO
 	static void addFields(IndexWriter writer,List<List<String>> documents, File file){
 		int i = 1; //PARA POSICION DEL DOC DENTRO DEL ARCHIVO SGM
@@ -95,7 +97,8 @@ public class CollectionIndexer {
 		}
 	}
 	
-	//PARSEA Y ENVIA A ADDFIELDS
+	//IndexDocs
+	// Parsea los documentos que se quieren indexar, y los envia addFields para que los añada al indice
 	public static void indexDocs(IndexWriter writer, File file){
 
     	if (file.canRead()){ //SI EL ARCHIVO NO SE PUEDE LEER, NO PODEMOS INDEXARLO
@@ -148,9 +151,8 @@ public class CollectionIndexer {
     	}
 	}
 
-	private static void indexer(){
-		
-	}
+	//MAIN
+	//Se recogen las opciones de la entrada estandar y se delega su procesamiento
 	public static void main (String args[]){
 		//INSTRUCCIONES DE USO
 		String usage = "mri_indexer Usage: "
@@ -278,6 +280,8 @@ public class CollectionIndexer {
 		}
 		
 		if(indexar==1){
+			 Date start = new Date();
+			 System.out.println("Indexing ...");
 			if (indexPath==null){
 	    	    indexes1(indexes1,docsPaths,openmode);
 	    	}else if(indexes2==0){
@@ -285,20 +289,26 @@ public class CollectionIndexer {
 	    	}else if(indexes2==1){
 	    		indexes2(indexPath,docsPaths);
 	    	}
+			Date end = new Date();
+			System.out.println("Total indexing time : "+ (end.getTime() - start.getTime()) + " milliseconds");
 		}
 		
 		if(procesar==1){
 			IndexProcesser processer = new IndexProcesser(indexin);
 			if(best_idfterms==1){
+				System.out.println("Best "+n+" idf terms");
 				processer.bestIdfTerms(field, n);
 			}
 			if(poor_idfterms==1){
+				System.out.println("Worst "+n+" idf terms");
 				processer.poorIdfTerms(field, n);
 			}
 			if(best_tfidfterms==1){
+				System.out.println("Best "+n+" tf*idf terms");
 				processer.bestTfIdfTerms(field, n);
 			}
 			if(poor_tfidfterms==1){
+				System.out.println("Worst "+n+" tf*idf terms");
 				processer.poorTfIdfTerms(field, n);
 			}
 		}
@@ -306,15 +316,19 @@ public class CollectionIndexer {
 		if(reindexar==1){
 			IndexConstructor constructor = new IndexConstructor(indexout, indexin);
 			if(deldocsterm==1){
+				System.out.println("Deleting docs with "+term+" on the field: "+field);
 				constructor.deldocsterm(field, term);
 			}
 			if(deldocsquery==1){
+				System.out.println("Deleting docs satisfying query: "+query+" [over all fields]");
 				constructor.deldocsquery(query);
 			}
 			if(mostsimilardoc_title==1){
+				System.out.println("Obtainig Similar docs with title using "+hilos+" threads");
 				constructor.mostsimilardocTitle(hilos);
 			}
 			if(mostsimilardoc_body==1){
+				System.out.println("Obtainig Similar docs with body using "+hilos+" threads");
 				constructor.mostsimilardocBody(n,hilos);
 			}
 		}
@@ -322,6 +336,11 @@ public class CollectionIndexer {
 		
 
 }
+
+//DESDE AQUI FUNCIONES DE INDEXADO
+// index : indexado simple, un solo hilo
+// indexes1 : indexado con varios hilos. Indices parciales que se unen al final.
+// indexes2 : indexado con varios hilos. Todos los hilos escriben directamente en el indice final.
 	
 private static void index(String indexPath,List<String> docsPaths,String openmode){
 	try{
