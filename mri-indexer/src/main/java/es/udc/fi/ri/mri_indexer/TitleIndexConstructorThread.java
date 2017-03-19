@@ -63,7 +63,6 @@ public class TitleIndexConstructorThread implements Runnable {
 	}
 	
 	
-	@Override
 	public void run() {
 		Date start = new Date();
 	    try{

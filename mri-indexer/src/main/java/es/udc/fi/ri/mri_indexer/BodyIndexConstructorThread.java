@@ -87,7 +87,6 @@ public class BodyIndexConstructorThread implements Runnable {
 	}
 	
 	
-	@Override
 	public void run() {
 		Date start = new Date();
 		int N = reader.numDocs();
