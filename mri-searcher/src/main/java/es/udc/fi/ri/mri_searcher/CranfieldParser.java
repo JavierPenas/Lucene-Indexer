@@ -37,6 +37,68 @@ public class CranfieldParser {
         return new StringBuffer(filecontent);
 	}
 	
+	public static List<String> parseDocument(StringBuffer documentContent) throws Exception{
+		/* CONVERTIMOS EL CONTENIDO EN UN STRING */
+		//StringBuffer fileContent = readFile(file);
+
+		String text = documentContent.toString();
+		String[] lines = text.split("\n"); //Dividimos el contenido del fichero en lineas
+		List<String> document = new LinkedList<String>();
+		
+		//PARA CADA DOCUMENTO, DIVIDIMOS SUS PARTES Y ALMACENAMOS
+				for (int i = 0; i < lines.length; ++i) {
+					if(lines[i].startsWith(".I")){
+						System.out.println("indexing doc: "+lines[i].substring(3));
+						document.add(lines[i].substring(3));
+					}else if (lines[i].startsWith(".T")){ 
+						i++;
+						StringBuffer tBuffer = new StringBuffer();
+						//System.out.println("OK T");
+						while (!(lines[i].startsWith(".A")||lines[i].startsWith(".B")||lines[i].startsWith(".W"))){
+							tBuffer.append(lines[i]);
+							tBuffer.append("\n");
+							i++;
+						}
+						document.add(tBuffer.toString());
+						i--;
+					}else if (lines[i].startsWith(".A")){
+						i++;
+						StringBuffer aBuffer = new StringBuffer();
+						//System.out.println("OK A");
+						while (!(lines[i].startsWith(".I")||lines[i].startsWith(".B")||lines[i].startsWith(".W"))){
+							aBuffer.append(lines[i]);
+							aBuffer.append("\n");
+							i++;
+						}
+						i--;
+						document.add(aBuffer.toString());
+					}else if (lines[i].startsWith(".B")){
+						i++;
+						StringBuffer bBuffer = new StringBuffer();
+						//System.out.println("OK B");
+						while (!(lines[i].startsWith(".I")||lines[i].startsWith(".W"))){
+							bBuffer.append(lines[i]);
+							bBuffer.append("\n");
+							i++;
+						}
+						i--;
+						document.add(bBuffer.toString());
+					}else if (lines[i].startsWith(".W")){
+						i++;
+						StringBuffer wBuffer = new StringBuffer();
+						//System.out.println("OK W");
+						while ((i<lines.length)){
+							wBuffer.append(lines[i]);
+							wBuffer.append("\n");
+							i++;
+						}
+						document.add(wBuffer.toString());
+					}
+				}
+				//System.out.println(document.size());
+				return document;
+	}
+	
 	//PARSER, ASUMIENDO QUE LOS DOCUMENTOS CUENTAN CON TODOS LOS CAMPOS Y QUE .A y .B SIEMPRE TIENEN UNA SOLA LINEA
 	public static List<List<String>> parseString(StringBuffer fileContent) throws Exception{
 		/* CONVERTIMOS EL CONTENIDO EN UN STRING */
@@ -45,39 +107,21 @@ public class CranfieldParser {
 		String text = fileContent.toString();
 		String[] lines = text.split("\n"); //Dividimos el contenido del fichero en lineas
 		List<List<String>> documents = new LinkedList<List<String>>();
-		List<String> document = new LinkedList<String>();
 		
-		//PARA CADA DOCUMENTO, DIVIDIMOS SUS PARTES Y ALMACENAMOS
-		for (int i = 0; i < lines.length; ++i) {
-			if(lines[i].startsWith(".I")){
-				document = new LinkedList<String>();
-				document.add(lines[i].substring(3));
-			}else if (lines[i].startsWith(".T")){ 
+		StringBuffer docBuffer = new StringBuffer();
+		for(int i=0; i<lines.length; i++){
+			if (lines[i].startsWith(".I")){
+				docBuffer.append(lines[i]);
+				docBuffer.append("\n");
 				i++;
-				StringBuffer tBuffer = new StringBuffer();
-				while (!(lines[i].startsWith(".A")||lines[i].startsWith(".B")||lines[i].startsWith(".W"))){
-					tBuffer.append(lines[i]);
-					tBuffer.append("\n");
+				while((i<lines.length)&& (!lines[i].startsWith(".I"))){
+					docBuffer.append(lines[i]);
+					docBuffer.append("\n");
 					i++;
 				}
-				document.add(tBuffer.toString());
-			}else if (lines[i].startsWith(".A")){
-				i++;
-				document.add(lines[i]);
-			}else if (lines[i].startsWith(".B")){
-				i++;
-				document.add(lines[i]);
-			}else if (lines[i].startsWith(".W")){
-				i++;
-				StringBuffer wBuffer = new StringBuffer();
-				while (  (i<lines.length) && (!lines[i].startsWith(".I")) ){
-					wBuffer.append(lines[i]);
-					wBuffer.append("\n");
-					i++;
-				}
-				document.add(wBuffer.toString());
-				documents.add(document);
-				//document.clear();
+				i--;
+				documents.add(parseDocument(docBuffer));
+				docBuffer.delete(0, docBuffer.length());
 			}
 		}
 		
