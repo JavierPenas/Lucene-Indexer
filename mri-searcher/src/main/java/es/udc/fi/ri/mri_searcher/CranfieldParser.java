@@ -38,9 +38,9 @@ public class CranfieldParser {
 	}
 	
 	//PARSER, ASUMIENDO QUE LOS DOCUMENTOS CUENTAN CON TODOS LOS CAMPOS Y QUE .A y .B SIEMPRE TIENEN UNA SOLA LINEA
-	public static List<List<String>> parseString(File file) throws Exception{
+	public static List<List<String>> parseString(StringBuffer fileContent) throws Exception{
 		/* CONVERTIMOS EL CONTENIDO EN UN STRING */
-		StringBuffer fileContent = readFile(file);
+		//StringBuffer fileContent = readFile(file);
 
 		String text = fileContent.toString();
 		String[] lines = text.split("\n"); //Dividimos el contenido del fichero en lineas
@@ -70,13 +70,14 @@ public class CranfieldParser {
 			}else if (lines[i].startsWith(".W")){
 				i++;
 				StringBuffer wBuffer = new StringBuffer();
-				while (!(lines[i].startsWith(".I"))){
+				while (  (i<lines.length) && (!lines[i].startsWith(".I")) ){
 					wBuffer.append(lines[i]);
 					wBuffer.append("\n");
 					i++;
 				}
 				document.add(wBuffer.toString());
 				documents.add(document);
+				//document.clear();
 			}
 		}
 		

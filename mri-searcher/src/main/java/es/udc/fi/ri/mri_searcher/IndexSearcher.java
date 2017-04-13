@@ -1,6 +1,12 @@
 package es.udc.fi.ri.mri_searcher;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 public class IndexSearcher {
+	
+	
 	public static void main (String args[]){
 		//INSTRUCCIONES DE USO
 		String usage = "mri_searcher Usage: "
@@ -11,7 +17,7 @@ public class IndexSearcher {
 		//VARIABLES DE INDEXACION
 		String openmode = "create"; //OPENMODE
 		String indexPath = null; //PATH DONDE SE CONSTRUIRA INDICE
-		String docPath = null; //PATH DONDE ESTA EL DOCUMENTO
+		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
 		
 		for(int i=0;i<args.length;i++) {
 			if("-openmode".equals(args[i])){
@@ -29,12 +35,21 @@ public class IndexSearcher {
 				indexPath = args[i+1];
 				i++;
 			}else if ("-coll".equals(args[i])) {
-		        docPath = args[i+1];
+				docsPaths.add(args[i+1]);
 		        i++;
 		    }else if("indexingmodel".equals(args[i])){
 		    	//NOT IMPLEMENTED YET
 		    }
 	}
+		
+	//INDEXACION DE DOCUMENTOS
+		 Date start = new Date();
+		 System.out.println("Indexing ...");
+		 CollectionIndexer.index(indexPath,docsPaths,openmode);
+		 Date end = new Date();
+		 System.out.println("Total indexing time : "+ (end.getTime() - start.getTime()) + " milliseconds");
+		
+	
 }
 	
 }
