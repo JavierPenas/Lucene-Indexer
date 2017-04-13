@@ -19,6 +19,12 @@ public class IndexSearcher {
 		String indexPath = null; //PATH DONDE SE CONSTRUIRA INDICE
 		List<String> docsPaths = new ArrayList<String>(); //ARRAY CON DIRECTORIOS A INDEXAR
 		
+		//VARIABLES BUSQUEDA, RELEVANCE FEEDBACK, y PS RELEVANCE FEEDBACK
+		String indexin; 
+		String search;
+		int cut = 0;
+		int top = 0;
+		
 		for(int i=0;i<args.length;i++) {
 			if("-openmode".equals(args[i])){
 				if ((args[i+1]).equals("create")||(args[i+1]).equals("append")||
@@ -39,6 +45,25 @@ public class IndexSearcher {
 		        i++;
 		    }else if("indexingmodel".equals(args[i])){
 		    	//NOT IMPLEMENTED YET
+		    }else if("-search".equals(args[i])){
+		    	if ((args[i+1]).equals("default")||(args[i+1]).equals("jm")||
+						(args[i+1]).equals("dir")){
+					search = args[i+1];
+					i++;
+				} else {
+					//SI NO COINCIDE CON NINGUN OPENMODE ERROR
+					System.out.println("openmode is default, jm or dir");
+					System.out.println("exiting");
+					System.exit(1);
+				}	
+		    }else if("-cut".equals(args[i])){
+		    	cut= Integer.parseInt(args[i+1]);
+		    	i++;
+		    }else if("-top".equals(args[i])){
+		    	top= Integer.parseInt(args[i+1]);
+		    	i++;
+		    }else if("-queries".equals(args[i])){
+		    	//IMPLEMENTAR OPCIONES DISPONIBLES
 		    }
 	}
 		
