@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -17,6 +18,9 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -123,7 +127,7 @@ public class CollectionIndexer {
 		    	}
 			}
 		
-		public static void index(String indexPath,List<String> docsPaths,String openmode){
+		public static void index(Map<String,Float> indexModel,String indexPath,List<String> docsPaths,String openmode){
 			try{
 				Directory dir;
 				dir = FSDirectory.open(Paths.get(indexPath));
@@ -137,7 +141,16 @@ public class CollectionIndexer {
 				}else if(openmode.equals("create_or_append")){
 					iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 				}
-		   	 
+				
+				if(indexModel.get("default")!=null){
+					iwc.setSimilarity(new BM25Similarity());
+				}else if(indexModel.get("jm")!=null){
+					iwc.setSimilarity(new LMJelinekMercerSimilarity(indexModel.get("jm")));
+				}else if(indexModel.get("dir")!=null){
+					iwc.setSimilarity(new LMDirichletSimilarity(indexModel.get("dir")));
+				}
+		   	 	
+				
 				IndexWriter writer = new IndexWriter(dir, iwc);
 
 				

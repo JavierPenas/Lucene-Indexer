@@ -12,31 +12,8 @@ import java.util.List;
 
 public class CranfieldParser {
 	
-	//ABRE EL DOCUMENTO QUE CONTIENE LA COLECCION
-	private static InputStreamReader openDoc(File file) throws FileNotFoundException{
-		FileInputStream fis = null;
-		fis = new FileInputStream(file);
-		
-		if(fis==null)
-			return null;
-		else
-			return new InputStreamReader(fis, StandardCharsets.UTF_8);
-	}
-	
-	//LEE EL DOCUMENTO CON LA COLECCION LINEA A LINEA
-	private static StringBuffer readFile(File file) throws Exception{
-		InputStreamReader fis;
-		fis = openDoc(file);
-		BufferedReader buffer = new BufferedReader(fis);
-        StringBuffer filecontent = new StringBuffer();
-        String text = null;
-        
-        while((text=buffer.readLine()) != null){
-      	  filecontent.append(text).append("\n");
-        }
-        return new StringBuffer(filecontent);
-	}
-	
+
+	//PARSER, ASUMIENDO QUE LOS DOCUMENTOS CUENTAN CON TODOS LOS CAMPOS Y QUE .A y .B SIEMPRE TIENEN UNA SOLA LINEA
 	public static List<String> parseDocument(StringBuffer documentContent) throws Exception{
 		/* CONVERTIMOS EL CONTENIDO EN UN STRING */
 		//StringBuffer fileContent = readFile(file);
@@ -99,7 +76,7 @@ public class CranfieldParser {
 				return document;
 	}
 	
-	//PARSER, ASUMIENDO QUE LOS DOCUMENTOS CUENTAN CON TODOS LOS CAMPOS Y QUE .A y .B SIEMPRE TIENEN UNA SOLA LINEA
+	//SEPARAMOS CADA DOCUMENTO DEL LA COLECCION, PARA LUEGO PARSEAR LAS PARTES DE CADA UNO
 	public static List<List<String>> parseString(StringBuffer fileContent) throws Exception{
 		/* CONVERTIMOS EL CONTENIDO EN UN STRING */
 		//StringBuffer fileContent = readFile(file);
