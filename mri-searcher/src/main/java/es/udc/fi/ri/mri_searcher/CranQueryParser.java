@@ -46,21 +46,14 @@ public class CranQueryParser {
 		List<List<Integer>> AllrelevantDocs = new LinkedList<List<Integer>>(); //LISTA CON LISTAS DE RELEVANTES PARA CADA QUERY
 		List<Integer> relevantDocs = new LinkedList<Integer>(); //LISTA CON RELEVANTES PARA UNA QUERY CONCRETA
 		
-		//PATRON QUE DEBE CUMPLIR PARA SER UNA LINEA VALIDA DE QRELS
-		Pattern p = Pattern.compile("\\d++ \\d++ \\p{Punct}\\d++");
-		Pattern p2 = Pattern.compile("\\d++ \\d++ \\d++\\p{Space}");
-		
-		int beforeId = -1; //SE INICIALIZA A UN ID IMPOSIBLE 
+		int beforeId = 1; //SE INICIALIZA A ID 1
 		for (int i = 0; i < lines.length; ++i) {
-			if( (p.matcher(lines[i]).matches())||(p2.matcher(lines[i]).matches()) ){
-				//PODEMOS HACER EL SPLIT TRANQUILOS PORQUE SABEMOS QUE SE CUMPLE EL PATRON
 				String[] linea = lines[i].split(" ");
 				int id = Integer.parseInt(linea[0]);
 				int rel = Integer.parseInt(linea[1]);
 				
 				if(id == beforeId){
 					relevantDocs.add(rel);
-					
 				}else{
 				
 					AllrelevantDocs.add(relevantDocs);
@@ -68,14 +61,8 @@ public class CranQueryParser {
 					beforeId = id;
 					relevantDocs.add(rel);
 				}
-			}
 		}
-				List<Integer> l = AllrelevantDocs.get(0);
-				for(int i: l){
-					System.out.print(i+" ");
-				}
-				System.out.println("");
-			
+		AllrelevantDocs.add(relevantDocs); //Debemos añadir el ultimo 
 		return AllrelevantDocs;
 	}
 	
@@ -113,7 +100,7 @@ public class CranQueryParser {
 					}
 				}
 				
-				/*for(Query q: queries){
+			/*	for(Query q: queries){
 					System.out.println(q.getId());
 					if(q.getRelevants()!=null){
 						for(int i: q.getRelevants()){
