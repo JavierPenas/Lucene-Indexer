@@ -25,7 +25,7 @@ public class CranfieldParser {
 		//PARA CADA DOCUMENTO, DIVIDIMOS SUS PARTES Y ALMACENAMOS
 				for (int i = 0; i < lines.length; ++i) {
 					if(lines[i].startsWith(".I")){
-						System.out.println("indexing doc: "+lines[i].substring(3));
+						//System.out.println("indexing doc: "+lines[i].substring(3));
 						document.add(lines[i].substring(3));
 					}else if (lines[i].startsWith(".T")){ 
 						i++;
@@ -72,7 +72,6 @@ public class CranfieldParser {
 						document.add(wBuffer.toString());
 					}
 				}
-				//System.out.println(document.size());
 				return document;
 	}
 	
@@ -101,7 +100,7 @@ public class CranfieldParser {
 				docBuffer.delete(0, docBuffer.length());
 			}
 		}
-		
+		System.out.println("Total: "+documents.size()+" documents indexed");
 		return documents;
 
 	}

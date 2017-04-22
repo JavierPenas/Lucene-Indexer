@@ -118,16 +118,19 @@ public class IndexSearcher {
 		 System.out.println("Indexing ...");
 		 CollectionIndexer.index(indexModel,indexPath,docsPaths,openmode);
 		 Date end = new Date();
-		 System.out.println("Total indexing time : "+ (end.getTime() - start.getTime()) + " milliseconds");
+		 System.out.println("Indexing time : "+ (end.getTime() - start.getTime()) + " milliseconds");
 		
-		//VARIABLES DE ARCHIVO QUERIES Y QRELS
+		//PROCESADO DE ARCHIVO QUERIES Y QRELS
 		String queriesPath = (docsPaths.get(0)+"\\cran.qry");
 		String qrelsPath = (docsPaths.get(0)+"\\cranqrel");
 		try {
+			System.out.println("Processing QRELS from: "+qrelsPath);
+			System.out.println("Processing Queries from: "+queriesPath);
 			CranQueryParser.parseDocument(queriesPath, qrelsPath);
+			System.out.println("Processed!");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error while parsing qrels and queries archives");
+			System.exit(1);
 		}
 }
 

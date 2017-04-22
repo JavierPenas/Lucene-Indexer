@@ -121,7 +121,7 @@ public class CollectionIndexer {
 								e.printStackTrace();
 							}
 		    				
-		    				System.out.println("File "+file.getPath()+" procesed ..");
+		    				//System.out.println("File "+file.getPath()+" procesed ..");
 		    			}
 		    		}
 		    	}
