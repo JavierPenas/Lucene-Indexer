@@ -8,7 +8,7 @@ import org.apache.lucene.search.ScoreDoc;
 
 public class Metrics {
 
-	public static void p10 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
+	public static float p10 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
 		float relevants = 0;
 		int i = 0;
 		while(i<10 && i<hits.length){
@@ -20,11 +20,13 @@ public class Metrics {
 				relevants++;
 			}
 			i++;
-		}		
+		}
+		
 		System.out.println("P@10: "+relevants/10);		
+		return (relevants/10);
 	}
 	
-	public static void p20 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
+	public static float p20 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
 		float relevants = 0;
 		int i = 0;
 		while(i<20 && i<hits.length){
@@ -36,11 +38,13 @@ public class Metrics {
 				relevants++;
 			}
 			i++;
-		}		
+		}	
+		
 		System.out.println("P@20: "+relevants/20);		
+		return (relevants/20);
 	}
 	
-	public static void recall10 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
+	public static float  recall10 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
 		float relevants = 0;
 		int i = 0;
 		while(i<10 && i<hits.length){
@@ -53,10 +57,12 @@ public class Metrics {
 			}
 			i++;
 		}
-		System.out.println("Recall@10: "+relevants/query.getRelevants().size());		
+		
+		System.out.println("Recall@10: "+relevants/query.getRelevants().size());	
+		return (relevants/query.getRelevants().size());
 	}
 	
-	public static void recall20 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
+	public static float recall20 (ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{
 		float relevants = 0;
 		int i = 0;
 		while(i<20 && i<hits.length){
@@ -69,7 +75,9 @@ public class Metrics {
 			}
 			i++;
 		}
-		System.out.println("Recall@20: "+relevants/query.getRelevants().size());		
+		
+		System.out.println("Recall@20: "+relevants/query.getRelevants().size());	
+		return (relevants/query.getRelevants().size());
 	}
 	
 	public static float aveP(ScoreDoc[] hits, QuerY query, IndexSearcher searcher) throws IOException{

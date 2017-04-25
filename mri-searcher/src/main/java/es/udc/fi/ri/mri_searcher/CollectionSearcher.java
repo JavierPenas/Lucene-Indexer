@@ -24,6 +24,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -105,7 +106,9 @@ public class CollectionSearcher {
 		Map<String, Float> searchModel = new HashMap<String, Float>(); //MODELO BUSQUEDA
 		int cut = 0;
 		int top = 0;
-		
+		int tq = 0;
+		int td = 0;
+		int ndr = 0;
 		int ini = 1;
 		int fin = -1;
 		
@@ -191,6 +194,11 @@ public class CollectionSearcher {
 		    		i++;
 		    	}
 		    	i--;
+		    }else if("-rf1".equals(args[i])){
+		    	 tq = Integer.parseInt(args[i+1]);
+		    	 td = Integer.parseInt(args[i+2]);
+		    	 ndr = Integer.parseInt(args[i+3]);
+		    	 i+= 3;
 		    }
 	}
 		
@@ -259,18 +267,17 @@ public class CollectionSearcher {
 				}
 				
 				Query query = MultiFieldQueryParser.parse(queryArray, fields, operator, analyzer);
-				
+				q.setQuery(query);
 				//System.out.println(query.toString());
 				TopDocs topDocs = indexSearcher.search(query,indexReader.numDocs());
 				ScoreDoc [] hits = topDocs.scoreDocs;
-				
 				System.out.println("QUERY: "+q.getId());
 				System.out.println(query.toString());
 				topN(hits, fieldsvisual,indexSearcher, cut,q);
-				Metrics.p10(hits, q,indexSearcher);
-				Metrics.p20(hits, q, indexSearcher);
-				Metrics.recall10(hits, q, indexSearcher);
-				Metrics.recall20(hits, q, indexSearcher);
+				q.setP10(Metrics.p10(hits, q,indexSearcher));
+				q.setP20(Metrics.p20(hits, q, indexSearcher));
+				q.setR10(Metrics.recall10(hits, q, indexSearcher));
+				q.setR20(Metrics.recall20(hits, q, indexSearcher));
 				sumaAve += Metrics.aveP(hits, q, indexSearcher);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -283,9 +290,46 @@ public class CollectionSearcher {
 		//CALCULO DE MAP
 		System.out.println("MAP:  "+sumaAve/fin);
 		
-		
+		float sumaAve2 = 0;
+		//RELEVANCE FEEDBACK Rf1
+		System.out.println("RELEVANCE FEEDBACK RF1");
+		for(int j= ini; j<=fin; j++ ){
+			try {
+				QuerY q = queries.get(j-1);
+				//OBTENEMOS LOS RESULTADOS DE LA QUERY
+				RelevanceFeedback.rf1( tq,  td,  ndr,  q,  fieldsproc,  indexReader,  analyzer );
+				
+				Query query = q.getQueryExpandida();
+				
+				//System.out.println(query.toString());
+				TopDocs topDocs = indexSearcher.search(query,indexReader.numDocs());
+				ScoreDoc [] hits = topDocs.scoreDocs;
+				System.out.println("QUERY ID: "+q.getId());
+				System.out.println("QUERY ANTERIOR: "+q.getQuery().toString());
+				System.out.println("QUERY ACTUAL: "+query.toString());
+				
+				topN(hits, fieldsvisual,indexSearcher, cut,q);
+				System.out.println("METRICAS ACTUALES: ");
+				Metrics.p10(hits, q,indexSearcher);
+				Metrics.p20(hits, q, indexSearcher);
+				Metrics.recall10(hits, q, indexSearcher);
+				Metrics.recall20(hits, q, indexSearcher);
+				sumaAve2 += Metrics.aveP(hits, q, indexSearcher);
+				
+				System.out.println("METRICAS ANTERIORES: ");
+				System.out.println("P@10: "+q.getP10()+"\nP@20: "+q.getP20()+"\nRecall@10: "+q.getR10()+"\nRecall@20: "+q.getR20());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		//CALCULO DE MAP
+		System.out.println("MAP ACTUAL:  "+sumaAve2/fin);
+		System.out.println("MAP ANTERIOR:  "+sumaAve/fin);
 		
 }
+	
+	
 	private static void topN(ScoreDoc [] hits,List<String> fieldsvisual,IndexSearcher searcher, int cut,QuerY q) throws IOException{
 		for(int i= 0; i<cut ; i++){
 			ScoreDoc score = hits[i];
