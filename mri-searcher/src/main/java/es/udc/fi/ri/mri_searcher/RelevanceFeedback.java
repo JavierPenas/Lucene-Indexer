@@ -17,6 +17,9 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -120,6 +123,34 @@ public class RelevanceFeedback {
 			query.addTerm(new TermQuery(entry.getKey()), BooleanClause.Occur.SHOULD);
 			i++;
 		}		
+	}
+	
+	public static Query rf2 (int ndr,QuerY q,IndexReader reader,List<String> fieldsproc, Analyzer analyzer ) throws IOException, ParseException{
+		List<Integer> relevantes = q.getRelevants();
+		BooleanClause.Occur[] operator = new BooleanClause.Occur[fieldsproc.size()];
+		String [] fields = fieldsproc.toArray(new String[0]);
+		for(int i=0;i<fieldsproc.size();i++){
+			operator[i]=BooleanClause.Occur.SHOULD;
+		}
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		builder.add(q.getQuery(),BooleanClause.Occur.SHOULD);
+		for(int i= 0; i<ndr; i++){
+			if(i==relevantes.size()){
+				break;
+			}
+			int id = relevantes.get(i);
+			Document doc = reader.document(id-1);
+			String title = doc.get("T");
+			String queryText = QueryParser.escape(title);
+			String [] queryArray = new String[fieldsproc.size()];
+			for(int j= 0; j<fieldsproc.size(); j++){
+				queryArray[j] = queryText;
+			}
+			
+			Query query = MultiFieldQueryParser.parse(queryArray, fields, operator, analyzer);
+			builder.add(query,BooleanClause.Occur.SHOULD );
+		}
+		return builder.build();
 	}
 	
 	public static void rf1(int tq, int td, int ndr, QuerY query,List<String> fieldsproc, IndexReader reader, Analyzer analyzer ) throws IOException{

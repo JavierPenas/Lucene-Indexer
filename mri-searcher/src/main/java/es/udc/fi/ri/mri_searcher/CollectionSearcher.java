@@ -199,6 +199,9 @@ public class CollectionSearcher {
 		    	 td = Integer.parseInt(args[i+2]);
 		    	 ndr = Integer.parseInt(args[i+3]);
 		    	 i+= 3;
+		    }else if("-rf2".equals(args[i])){
+		    	ndr = Integer.parseInt(args[i+1]);
+		    	i++;
 		    }
 	}
 		
@@ -327,8 +330,46 @@ public class CollectionSearcher {
 		System.out.println("MAP ACTUAL:  "+sumaAve2/fin);
 		System.out.println("MAP ANTERIOR:  "+sumaAve/fin);
 		
+		rf2(ini, fin, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);
 }
-	
+
+	private static void rf2(int ini, int fin,int ndr,int cut, float sumaAve,IndexReader indexReader,Analyzer analyzer,List<String> fieldsproc,List<String> fieldsvisual,IndexSearcher indexSearcher,  List<QuerY> queries) throws ParseException{
+		float sumaAve2 = 0;
+		System.out.println("RELEVANCE FEEDBACK RF2");
+		for(int j= ini; j<=fin; j++ ){
+			try {
+				QuerY q = queries.get(j-1);
+				//OBTENEMOS LOS RESULTADOS DE LA QUERY
+			
+				
+				Query query = 	RelevanceFeedback.rf2(ndr, q, indexReader, fieldsproc, analyzer);
+				
+				//System.out.println(query.toString());
+				TopDocs topDocs = indexSearcher.search(query,indexReader.numDocs());
+				ScoreDoc [] hits = topDocs.scoreDocs;
+				System.out.println("QUERY ID: "+q.getId());
+				System.out.println("QUERY ANTERIOR: "+q.getQuery().toString());
+				System.out.println("QUERY ACTUAL: "+query.toString());
+				
+				topN(hits, fieldsvisual,indexSearcher, cut,q);
+				System.out.println("METRICAS ACTUALES: ");
+				Metrics.p10(hits, q,indexSearcher);
+				Metrics.p20(hits, q, indexSearcher);
+				Metrics.recall10(hits, q, indexSearcher);
+				Metrics.recall20(hits, q, indexSearcher);
+				sumaAve2 += Metrics.aveP(hits, q, indexSearcher);
+				
+				System.out.println("METRICAS ANTERIORES: ");
+				System.out.println("P@10: "+q.getP10()+"\nP@20: "+q.getP20()+"\nRecall@10: "+q.getR10()+"\nRecall@20: "+q.getR20());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		//CALCULO DE MAP
+		System.out.println("MAP ACTUAL:  "+sumaAve2/fin);
+		System.out.println("MAP ANTERIOR:  "+sumaAve/fin);
+	}
 	
 	private static void topN(ScoreDoc [] hits,List<String> fieldsvisual,IndexSearcher searcher, int cut,QuerY q) throws IOException{
 		for(int i= 0; i<cut ; i++){
