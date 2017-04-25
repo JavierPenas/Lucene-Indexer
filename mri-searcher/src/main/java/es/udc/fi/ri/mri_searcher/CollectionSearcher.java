@@ -21,6 +21,7 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
@@ -83,6 +84,7 @@ public class CollectionSearcher {
 		
 	}
 	
+
 	public static void main (String args[]) throws Exception{
 		//INSTRUCCIONES DE USO
 		String usage = "mri_searcher Usage: "
@@ -104,7 +106,7 @@ public class CollectionSearcher {
 		int cut = 0;
 		int top = 0;
 		
-		int ini = -1;
+		int ini = 1;
 		int fin = -1;
 		
 		for(int i=0;i<args.length;i++) {
@@ -168,6 +170,7 @@ public class CollectionSearcher {
 		    		fin = Integer.parseInt(args[i+1].substring(args[i+1].indexOf("-")+1));
 		    	}else if(p2.matcher(args[i+1]).matches()){
 		    		ini = Integer.parseInt(args[i+1]);
+		    		fin = Integer.parseInt(args[i+1]);
 		    	}else{
 		    		System.out.println("only valid all|int1|int1-int2 for -queries parameter");
 					System.out.println("exiting");
@@ -241,8 +244,13 @@ public class CollectionSearcher {
 		MultiFieldQueryParser queryParser = new MultiFieldQueryParser(fields, analyzer);
 		//PARA CADA QUERY HACEMOS BUSQUEDA Y PROCESAMOS RESULTADOS
 		
-		for(QuerY q: queries){
+		if(fin ==-1){
+			fin = queries.size();
+		}
+		float sumaAve = 0;
+		for(int j= ini; j<=fin; j++ ){
 			try {
+				QuerY q = queries.get(j-1);
 				//OBTENEMOS LOS RESULTADOS DE LA QUERY
 				String queryText = QueryParser.escape(q.getText());
 				String [] queryArray = new String[fieldsproc.size()];
@@ -255,11 +263,15 @@ public class CollectionSearcher {
 				//System.out.println(query.toString());
 				TopDocs topDocs = indexSearcher.search(query,indexReader.numDocs());
 				ScoreDoc [] hits = topDocs.scoreDocs;
-				//System.out.println(hits.length);
-				//EJECUTAMOS LAS METRICAS
+				
 				System.out.println("QUERY: "+q.getId());
 				System.out.println(query.toString());
+				topN(hits, fieldsvisual,indexSearcher, cut,q);
 				Metrics.p10(hits, q,indexSearcher);
+				Metrics.p20(hits, q, indexSearcher);
+				Metrics.recall10(hits, q, indexSearcher);
+				Metrics.recall20(hits, q, indexSearcher);
+				sumaAve += Metrics.aveP(hits, q, indexSearcher);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -268,10 +280,30 @@ public class CollectionSearcher {
 				e.printStackTrace();
 			}
 		}
+		//CALCULO DE MAP
+		System.out.println("MAP:  "+sumaAve/fin);
 		
 		
 		
 }
+	private static void topN(ScoreDoc [] hits,List<String> fieldsvisual,IndexSearcher searcher, int cut,QuerY q) throws IOException{
+		for(int i= 0; i<cut ; i++){
+			ScoreDoc score = hits[i];
+			Document doc = searcher.doc(score.doc);
+			System.out.println("SCORE: "+score.score);
+			if (!(q.getRelevants()==null)){
+				int idDoc = Integer.parseInt(doc.get("I"));
+				System.out.println("RELEVANT : "+q.getRelevants().contains(idDoc) );
+			} else{
+				System.out.println("RELEVANT : ");
+			}
+			
+			for(String s: fieldsvisual){
+				System.out.println(doc.get(s));
+			}
+		}
+	}
+	
 
 
 }
