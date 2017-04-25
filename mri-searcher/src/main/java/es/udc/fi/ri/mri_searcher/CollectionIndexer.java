@@ -52,11 +52,11 @@ public class CollectionIndexer {
 				for(List<String> document : documents){
 					try {
 						Document doc = new Document();
-						doc.add(new Field(".I",document.get(0),TYPE_STORED));
-						doc.add(new Field(".T",document.get(1),TYPE_STORED));
-						doc.add(new Field(".A",document.get(2),TYPE_STORED));
-			  			doc.add(new Field(".B",document.get(3),TYPE_STORED));
-					  	doc.add(new Field(".W",document.get(4),TYPE_STORED));
+						doc.add(new Field("I",document.get(0),TYPE_STORED));
+						doc.add(new Field("T",document.get(1),TYPE_STORED));
+						doc.add(new Field("A",document.get(2),TYPE_STORED));
+			  			doc.add(new Field("B",document.get(3),TYPE_STORED));
+					  	doc.add(new Field("W",document.get(4),TYPE_STORED));
 					  	doc.add(new Field("seqDocNumber", Integer.toString(i),TYPE_STORED));
 					  	i++;
 					  	writer.addDocument(doc);

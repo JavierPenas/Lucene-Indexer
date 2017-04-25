@@ -66,7 +66,7 @@ public class CranQueryParser {
 		return AllrelevantDocs;
 	}
 	
-	public static List<Query> parseDocument(String queriesPath, String qrelsPath) throws Exception{
+	public static List<QuerY> parseDocument(String queriesPath, String qrelsPath) throws Exception{
 	
 		File queriesDocument = new File(queriesPath); //ABRIMOS ARCHIVO DE QUERIES
 		File qrelsDocument = new File(qrelsPath); //ABRIMOS ARCHIVO CON RELEVANCIAS
@@ -76,13 +76,13 @@ public class CranQueryParser {
 		String text = documentContent.toString();
 		String[] lines = text.split("\n"); //Dividimos el contenido del fichero en lineas
 		
-		List<Query> queries = new LinkedList<Query>(); //LISTA CON TODAS LAS QUERIES PROCESADAS
-		Query query = null; //QUERY INDEPENDIENTE
+		List<QuerY> queries = new LinkedList<QuerY>(); //LISTA CON TODAS LAS QUERIES PROCESADAS
+		QuerY query = null; //QUERY INDEPENDIENTE
 		
 		//PARA CADA QUERY, DIVIDIMOS SUS PARTES Y ALMACENAMOS
 				for (int i = 0; i < lines.length; ++i) {
 					if(lines[i].startsWith(".I")){
-						query = new Query();
+						query = new QuerY();
 						query.setId(Integer.parseInt(lines[i].substring(3)));
 					}else if(lines[i].startsWith(".W")){
 						i++;

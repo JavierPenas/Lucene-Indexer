@@ -2,12 +2,12 @@ package es.udc.fi.ri.mri_searcher;
 
 import java.util.List;
 
-public class Query {
+public class QuerY {
 	private  int id;
 	private  String text;
 	private  List<Integer> relevants = null;
 	
-	public Query(int id, String text,List<Integer> relevants) {
+	public QuerY(int id, String text,List<Integer> relevants) {
 		this.id = id;
 		this.text = text;
 		this.relevants = relevants;
@@ -21,7 +21,7 @@ public class Query {
 		this.relevants = relevants;
 	}
 
-	public Query(){
+	public QuerY(){
 		
 	}
 
