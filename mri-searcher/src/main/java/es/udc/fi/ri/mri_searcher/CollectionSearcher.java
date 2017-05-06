@@ -386,16 +386,18 @@ public class CollectionSearcher {
 					collection_size += reader.getSumTotalTermFreq(f.name()); //SUMAMOS NUMERO PALABRAS EN FIELD A COLECCION
 					
 					Terms terminos = reader.getTermVector(score.doc, f.name()); //OBTENEMOS TODOS LOS TERMINOS DEL FIELD
-					TermsEnum termsEnum = null;
-					termsEnum = terminos.iterator();
-					while(termsEnum.next()!=null){		//RECORREMOS TODOS LOS TERMINO				
-						if(!terms.containsKey(termsEnum.term().utf8ToString())){ //SI ESA PALABRA AUN NO ESTA ANADIDA
-							postings = termsEnum.postings(postings, PostingsEnum.FREQS);
-							postings.nextDoc();
-							double docFreq = postings.freq(); //NUMERO OCURRENCIAS DEL TERMINO EN DOCUMENTO
-							double totalTermFreq = termsEnum.totalTermFreq(); //NUMERO TOTAL OCURRENCIAS TERMINO EN COLECCION													
-							terms.put(termsEnum.term().utf8ToString(), postings.freq()); //EN TERMS TENEMOS PAR (NOMBRE,FRECUENCIA EN DOC)
-							palabras.add(new Palabra(termsEnum.term().utf8ToString(), totalTermFreq, docFreq));
+					if(terminos!=null){	
+						TermsEnum termsEnum = null;
+						termsEnum = terminos.iterator();
+						while(termsEnum.next()!=null){		//RECORREMOS TODOS LOS TERMINO				
+							if(!terms.containsKey(termsEnum.term().utf8ToString())){ //SI ESA PALABRA AUN NO ESTA ANADIDA
+								postings = termsEnum.postings(postings, PostingsEnum.FREQS);
+								postings.nextDoc();
+								double docFreq = postings.freq(); //NUMERO OCURRENCIAS DEL TERMINO EN DOCUMENTO
+								double totalTermFreq = termsEnum.totalTermFreq(); //NUMERO TOTAL OCURRENCIAS TERMINO EN COLECCION													
+								terms.put(termsEnum.term().utf8ToString(), postings.freq()); //EN TERMS TENEMOS PAR (NOMBRE,FRECUENCIA EN DOC)
+								palabras.add(new Palabra(termsEnum.term().utf8ToString(), totalTermFreq, docFreq));
+							}
 						}
 					}
 				}
