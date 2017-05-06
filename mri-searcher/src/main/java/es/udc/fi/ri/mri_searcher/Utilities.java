@@ -25,15 +25,15 @@ public class Utilities {
 		}
 	}
 	
-	public static List<Entry<String,Double>> orderForMax(Map map){
-		Set<Entry<String,Double>> set = map.entrySet();
-		List<Entry<String,Double>> list = new ArrayList<Entry<String, Double>>(set);
+	public static List<Entry<String,Palabra>> orderForMax(Map map){
+		Set<Entry<String,Palabra>> set = map.entrySet();
+		List<Entry<String,Palabra>> list = new ArrayList<Entry<String, Palabra>>(set);
 		
-		Collections.sort( list, new Comparator<Map.Entry<String, Double>>()
+		Collections.sort( list, new Comparator<Map.Entry<String, Palabra>>()
         {
-            public int compare( Map.Entry<String, Double> o1, Map.Entry<String, Double> o2 )
+            public int compare( Map.Entry<String, Palabra> o1, Map.Entry<String, Palabra> o2 )
             {
-                return (o2.getValue()).compareTo( o1.getValue() );
+                return ( (o2.getValue().getPwr()).compareTo( (o1.getValue().getPwr()) ));
             }
         } );
 		return list;

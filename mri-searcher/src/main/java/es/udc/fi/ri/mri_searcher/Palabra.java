@@ -4,7 +4,8 @@ public class Palabra {
 	private String palabra;
 	private double totalTermFreq; //Frecuencia palabra en colección
 	private double docFreq; //frecuencia palabra en documento
-	
+	private double pwd;
+	private Double pwr;
 	
 	public Palabra(String palabra, double totalTermFreq, double docFreq) {
 		super();
@@ -13,6 +14,22 @@ public class Palabra {
 		this.docFreq = docFreq;
 	}
 	
+	public Double getPwr() {
+		return pwr;
+	}
+
+	public void setPwr(double pwr) {
+		this.pwr = pwr;
+	}
+
+	public double getPwd() {
+		return pwd;
+	}
+
+	public void setPwd(double pwd) {
+		this.pwd = pwd;
+	}
+
 	public String getPalabra() {
 		return palabra;
 	}

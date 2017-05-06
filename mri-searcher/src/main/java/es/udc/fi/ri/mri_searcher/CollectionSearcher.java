@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -41,6 +42,9 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -121,6 +125,11 @@ public class CollectionSearcher {
 		int fin = -1;
 		int nd = 0;
 		int nw = 0;
+		int rf1 = 0;
+		int rf2 = 0;
+		int prfjm = 0;
+		int prfdir = 0;
+		int explain = 0;
 		
 		for(int i=0;i<args.length;i++) {
 			if("-openmode".equals(args[i])){
@@ -205,17 +214,28 @@ public class CollectionSearcher {
 		    	}
 		    	i--;
 		    }else if("-rf1".equals(args[i])){
+		    	 rf1 = 1;
 		    	 tq = Integer.parseInt(args[i+1]);
 		    	 td = Integer.parseInt(args[i+2]);
 		    	 ndr = Integer.parseInt(args[i+3]);
 		    	 i+= 3;
 		    }else if("-rf2".equals(args[i])){
+		    	rf2 = 1;
 		    	ndr = Integer.parseInt(args[i+1]);
 		    	i++;
 		    }else if("-prfjm".equals(args[i])){
+		    	prfjm = 1;
 		    	nd = Integer.parseInt(args[i+1]);
 		    	nw = Integer.parseInt(args[i+2]);
 		    	i+=2;
+		    }else if("-prfdir".equals(args[i])){
+		    	prfdir = 1;
+		    	nd = Integer.parseInt(args[i+1]);
+		    	nw = Integer.parseInt(args[i+2]);
+		    	i+=2;
+		    }else if("-explain".equals(args[i])){
+		    	explain = 1;
+		    	i++;
 		    }
 	}
 		
@@ -247,16 +267,24 @@ public class CollectionSearcher {
 		Directory dir = null;
 		DirectoryReader indexReader = null;
 		IndexSearcher indexSearcher = null;
+		
 		try{
 			dir = FSDirectory.open(Paths.get(indexPath));
 			indexReader = DirectoryReader.open(dir);
 			//CREAMOS UN SEARCHER PARA EL INDICE
 			indexSearcher = new IndexSearcher(indexReader);
+			if(searchModel.get("default")!=null){
+				indexSearcher.setSimilarity(new BM25Similarity());
+			}else if(searchModel.get("jm")!=null){
+				indexSearcher.setSimilarity(new LMJelinekMercerSimilarity(indexModel.get("jm")));
+			}else if(searchModel.get("dir")!=null){
+				indexSearcher.setSimilarity(new LMDirichletSimilarity(indexModel.get("dir")));
+			}
 		}catch(IOException e){
 			
 		}
 		File file = new File("C:\\Users\\Javier\\Desktop\\RI2\\common_words");
-		Analyzer analyzer = new StandardAnalyzer(parseStopwords(file));
+		Analyzer analyzer = new StandardAnalyzer();
 		String [] fields = fieldsproc.toArray(new String[0]);
 		
 		//Clausula aplicable a la busqueda (OR,AND,NOT)
@@ -308,6 +336,158 @@ public class CollectionSearcher {
 		//CALCULO DE MAP
 		System.out.println("MAP:  "+sumaAve/fin);
 		
+		if(rf1==1){
+			rf1(ini, fin, tq, td, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);	
+		}
+		if(rf2==1){
+			rf2(ini, fin, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);	
+		}
+		if(prfjm==1){
+			prfjm(explain,0,ini,fin,queries, fieldsproc, indexSearcher, indexReader, analyzer, operator, fields, queryParser, nd, nw, searchModel.get("jm"));	
+		}
+		if(prfdir==1){
+			prfjm(explain,1,ini, fin, queries, fieldsproc, indexSearcher, indexReader, analyzer, operator, fields, queryParser, nd, nw, searchModel.get("dir"));
+		}
+		
+		
+		
+}
+	private static void prfjm(int explain, int funcion,int ini,int fin,List<QuerY> queries,List<String> fieldsproc, IndexSearcher searcher,IndexReader reader,Analyzer analyzer,BooleanClause.Occur[] operator,String [] campos,MultiFieldQueryParser queryParser, int nd,int nw,float alfa) throws IOException, ParseException{
+		Map<String,Palabra> pwr = new HashMap<String, Palabra>(); 
+		float sumaAve = 0;
+		float sumaAveExpandida = 0;
+		System.out.println("PSEUDO RELEVANCE FEEDBACK");
+		for(int j= ini; j<=fin; j++ ){
+			double pqd = 0;
+			QuerY q = queries.get(j-1);
+			//OBTENEMOS LOS ND PRIMEROS DOCUMENTOS OBTENIDOS CON LA QUERY
+			PostingsEnum postings = null;
+			ScoreDoc[] hits = new ScoreDoc[nd];
+			Map<String,Integer> terms = new HashMap<String, Integer>(); //<>
+			List<Palabra> palabras = new ArrayList<Palabra>();
+			List<Palabra> palabrasQ = new ArrayList<Palabra>();
+			double pd = (1.0/nd);
+			System.out.println(q.getHits().length);
+			for(int i= 0; i<nd; i++){
+				hits[i] = q.getHits()[i];
+				ScoreDoc score = hits[i];
+				Document doc = searcher.doc(score.doc);
+				List<IndexableField> fields = doc.getFields();
+				int doc_size = 0; // NUMERO DE PALABRAS DEL DOCUMENTO
+				int collection_size  = 0; //NUMERO DE PALABRAS EN COLECCION
+				for(IndexableField f: fields){
+					doc_size += f.stringValue().length();
+					collection_size += reader.getSumTotalTermFreq(f.name());
+					
+					Terms terminos = reader.getTermVector(score.doc, f.name());
+					TermsEnum termsEnum = null;
+					termsEnum = terminos.iterator();
+					while(termsEnum.next()!=null){						
+						if(!terms.containsKey(termsEnum.term().utf8ToString())){
+							postings = termsEnum.postings(postings, PostingsEnum.FREQS);
+							postings.nextDoc();
+							double docFreq = postings.freq(); //NUMERO OCURRENCIAS DEL TERMINO EN DOCUMENTO
+							double totalTermFreq = termsEnum.totalTermFreq(); //NUMERO TOTAL OCURRENCIAS TERMINO EN COLECCION													
+							terms.put(termsEnum.term().utf8ToString(), postings.freq());
+							palabras.add(new Palabra(termsEnum.term().utf8ToString(), totalTermFreq, docFreq));
+						}
+					}
+				}
+				
+				StringTokenizer st = new StringTokenizer(q.getText());
+				while(st.hasMoreTokens()){
+					String p = st.nextToken();
+					double doc_freq = 0.0;
+					if(terms.containsKey(p)){
+						 doc_freq = terms.get(p);
+					}
+					Term termino = new Term("W", p);					
+					palabrasQ.add(new Palabra(p, reader.totalTermFreq(termino), doc_freq));
+				}
+				
+				for(Palabra palabra : palabrasQ){
+					if(funcion==0){
+						 pqd += Math.log10(((1-alfa)*(palabra.getDocFreq()/(double) doc_size)) + (alfa*palabra.getTotalTermFreq()/(double) collection_size));	
+					}else if(funcion ==1){
+						pqd += Math.log10( (palabra.getDocFreq()+(alfa*palabra.getTotalTermFreq()/(double) collection_size)) / ((double) doc_size + alfa));
+					}
+				}
+				
+				
+				//EJECUTAR P(W|D)*P(Q|D)*P(D)
+				
+				for(Palabra palabra : palabras){
+					double pwd = 0;
+					if(funcion==0){
+						 pwd = Math.log10(((1-alfa)*(palabra.getDocFreq()/(double) doc_size)) + (alfa*palabra.getTotalTermFreq()/(double) collection_size)); 				
+					}else if(funcion==1){
+						 pwd = Math.log10( (palabra.getDocFreq()+(alfa*palabra.getTotalTermFreq()/(double) collection_size)) / ((double) doc_size + alfa));
+					}
+					double sumPwr = pwd*pqd*pd;
+					palabra.setPwd(pwd);
+					if(pwr.containsKey(palabra.getPalabra())){
+						 palabra.setPwr(palabra.getPwr()+sumPwr);
+					     pwr.put(palabra.getPalabra(), palabra);
+					}else{
+						 pwr.put(palabra.getPalabra(), palabra);
+					}
+				}
+			}
+			//EN PWR TENEMOS PALABRA CON SCORE PWR ASOCIADO
+			//ORDENAR PWR
+			List<Entry<String,Palabra>> orderedTerms = Utilities.orderForMax(pwr);
+			java.util.Iterator<Entry<String, Palabra>> it = orderedTerms.iterator();
+			int i=1;
+			Entry<String,Palabra> entry;
+			StringBuffer sb = new StringBuffer(q.getText());
+			while( i<=nw){
+				try{
+					entry=it.next();
+					sb.append(" "+entry.getKey());
+					if(explain ==1){
+						System.out.println("P(D)= "+pd);
+						System.out.println("P(w|D)= "+entry.getValue().getPwd());
+						System.out.println("P(Q|D)= "+ pqd);
+					}
+					i++;
+				}catch(NoSuchElementException e){
+					break;
+				}
+			}
+			
+			String queryText = QueryParser.escape(sb.toString());
+			String [] queryArray = new String[fieldsproc.size()];
+			for(int k= 0; k<fieldsproc.size(); k++){
+				queryArray[k] = queryText;
+			}
+			
+			Query query = MultiFieldQueryParser.parse(queryArray, campos, operator, analyzer);
+			q.setQuery(query);
+			System.out.println("QUERY ORIGINAL: "+q.getText());
+			System.out.println("METRICAS ACTUALES: ");
+			Metrics.p10(q.getHits(), q,searcher);
+			Metrics.p20(q.getHits(), q, searcher);
+			Metrics.recall10(q.getHits(), q, searcher);
+			Metrics.recall20(q.getHits(), q, searcher);
+			
+			TopDocs topDocs = searcher.search(query,reader.numDocs());
+			ScoreDoc [] resultados = topDocs.scoreDocs;
+			ScoreDoc [] hitsExpandida = topDocs.scoreDocs;
+			System.out.println("QUERY EXPANDIDA: "+query.toString());
+			Metrics.p10(hitsExpandida, q,searcher);
+			Metrics.p20(hitsExpandida, q, searcher);
+			Metrics.recall10(hitsExpandida, q, searcher);
+			Metrics.recall20(hitsExpandida, q, searcher);
+			
+			sumaAve += Metrics.aveP(q.getHits(), q, searcher);
+			sumaAveExpandida += Metrics.aveP(hitsExpandida, q, searcher);
+		}
+		System.out.println("MAP ORIGINAL: "+sumaAve/fin);
+		System.out.println("MAP EXPANDIDA: "+sumaAveExpandida/fin);
+	}
+	
+	
+	private static void rf1 (int ini, int fin,int tq,int td,int ndr,int cut, float sumaAve,IndexReader indexReader,Analyzer analyzer,List<String> fieldsproc,List<String> fieldsvisual,IndexSearcher indexSearcher,  List<QuerY> queries){
 		float sumaAve2 = 0;
 		//RELEVANCE FEEDBACK Rf1
 		System.out.println("RELEVANCE FEEDBACK RF1");
@@ -345,100 +525,6 @@ public class CollectionSearcher {
 		System.out.println("MAP ACTUAL:  "+sumaAve2/fin);
 		System.out.println("MAP ANTERIOR:  "+sumaAve/fin);
 		
-		rf2(ini, fin, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);
-		
-		
-		
-}
-	private static void prfjm(List<QuerY> queries,List<String> fieldsproc, IndexSearcher searcher,IndexReader reader,Analyzer analyzer,BooleanClause.Occur[] operator,String [] campos,MultiFieldQueryParser queryParser, int nd,int nw,float lambda) throws IOException, ParseException{
-		Map<String,Double> pwr = new HashMap<String, Double>(); 
-		for(QuerY q : queries){
-			//OBTENEMOS LOS ND PRIMEROS DOCUMENTOS OBTENIDOS CON LA QUERY
-			PostingsEnum postings = null;
-			ScoreDoc[] hits = new ScoreDoc[nd];
-			Map<String,Integer> terms = new HashMap<String, Integer>(); //<>
-			List<Palabra> palabras = new ArrayList<Palabra>();
-			List<Palabra> palabrasQ = new ArrayList<Palabra>();
-			double pd = (1.0/nd);
-			for(int i= 0; i<nd; i++){
-				hits[i] = q.getHits()[i];
-				ScoreDoc score = hits[i];
-				Document doc = searcher.doc(score.doc);
-				List<IndexableField> fields = doc.getFields();
-				int doc_size = 0; // NUMERO DE PALABRAS DEL DOCUMENTO
-				int collection_size  = 0; //NUMERO DE PALABRAS EN COLECCION
-				for(IndexableField f: fields){
-					doc_size += doc.get(f.stringValue()).length();
-					collection_size += reader.getSumTotalTermFreq(f.stringValue());
-					
-					Terms terminos = reader.getTermVector(score.doc, f.stringValue());
-					TermsEnum termsEnum = null;
-					termsEnum = terminos.iterator();
-					while(termsEnum.next()!=null){						
-						if(!terms.containsKey(termsEnum.term().utf8ToString())){
-							postings = termsEnum.postings(postings, PostingsEnum.FREQS);
-							double docFreq = postings.freq(); //NUMERO OCURRENCIAS DEL TERMINO EN DOCUMENTO
-							double totalTermFreq = termsEnum.totalTermFreq(); //NUMERO TOTAL OCURRENCIAS TERMINO EN COLECCION													
-							terms.put(termsEnum.term().utf8ToString(), postings.freq());
-							palabras.add(new Palabra(termsEnum.term().utf8ToString(), totalTermFreq, docFreq));
-						}
-					}
-				}
-				
-				StringTokenizer st = new StringTokenizer(q.getText());
-				while(st.hasMoreTokens()){
-					String p = st.nextToken();
-					double doc_freq = 0.0;
-					if(terms.containsKey(p)){
-						 doc_freq = terms.get(p);
-					}
-					Term termino = new Term("W", p);					
-					palabrasQ.add(new Palabra(p, reader.totalTermFreq(termino), doc_freq));
-				}
-				double pqd = 0;
-				for(Palabra palabra : palabrasQ){
-					 pqd += Math.log10(((1-lambda)*(palabra.getDocFreq()/(double) doc_size)) + (lambda*palabra.getTotalTermFreq()/(double) collection_size));
-				}
-				
-				
-				//EJECUTAR P(W|D)*P(Q|D)*P(D)
-				
-				for(Palabra palabra : palabras){
-					double pwd = Math.log10(((1-lambda)*(palabra.getDocFreq()/(double) doc_size)) + (lambda*palabra.getTotalTermFreq()/(double) collection_size)); 
-					double sumPwr = pwd*pqd*pd;
-					if(pwr.containsKey(palabra.getPalabra())){
-					     pwr.put(palabra.getPalabra(), pwr.get(palabra.getPalabra())+sumPwr);
-					}else{
-						 pwr.put(palabra.getPalabra(), sumPwr);
-					}
-				}
-			}
-			//EN PWR TENEMOS PALABRA CON SCORE PWR ASOCIADO
-			//ORDENAR PWR
-			List<Entry<String,Double>> orderedTerms = Utilities.orderForMax(pwr);
-			java.util.Iterator<Entry<String, Double>> it = orderedTerms.iterator();
-			int i=1;
-			Entry<String,Double> entry;
-			StringBuffer sb = new StringBuffer(q.getText());
-			while( i<=nw ){
-				entry=it.next();
-				sb.append(" "+entry.getKey());
-			}
-			
-			String queryText = QueryParser.escape(sb.toString());
-			String [] queryArray = new String[fieldsproc.size()];
-			for(int k= 0; k<fieldsproc.size(); k++){
-				queryArray[k] = queryText;
-			}
-			
-			Query query = MultiFieldQueryParser.parse(queryArray, campos, operator, analyzer);
-			q.setQuery(query);
-			//System.out.println(query.toString());
-			TopDocs topDocs = searcher.search(query,reader.numDocs());
-			ScoreDoc [] resultados = topDocs.scoreDocs;
-			
-			
-		}
 	}
 
 	private static void rf2(int ini, int fin,int ndr,int cut, float sumaAve,IndexReader indexReader,Analyzer analyzer,List<String> fieldsproc,List<String> fieldsvisual,IndexSearcher indexSearcher,  List<QuerY> queries) throws ParseException{
