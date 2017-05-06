@@ -5,11 +5,17 @@ import java.util.List;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 
 public class QuerY {
 	private  int id;
 	private  String text;
 	private  Query query;
+	private  ScoreDoc [] hits;
+	
+	
+	
+	
 	public Query getQuery() {
 		return query;
 	}
@@ -26,6 +32,14 @@ public class QuerY {
 	private float r20;
 	
 	
+	public ScoreDoc[] getHits() {
+		return hits;
+	}
+
+	public void setHits(ScoreDoc[] hits) {
+		this.hits = hits;
+	}
+
 	public float getP10() {
 		return p10;
 	}
