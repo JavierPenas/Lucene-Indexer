@@ -260,7 +260,6 @@ public class CollectionSearcher {
 			System.exit(1);
 		}
 		
-		
 		//COMPUTAMOS METRICAS CON LAS QUERIES EN EL INDICE CREADO "indexPath"
 		
 		//CREAMOS UN READER PARA EL INDICE
@@ -335,9 +334,9 @@ public class CollectionSearcher {
 		}
 		//CALCULO DE MAP
 		System.out.println("MAP:  "+sumaAve/fin);
-		
+
 		if(rf1==1){
-			rf1(ini, fin, tq, td, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);	
+			rf1(explain,ini, fin, tq, td, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);	
 		}
 		if(rf2==1){
 			rf2(ini, fin, ndr, cut, sumaAve, indexReader, analyzer, fieldsproc, fieldsvisual, indexSearcher, queries);	
@@ -353,46 +352,55 @@ public class CollectionSearcher {
 		
 }
 	private static void prfjm(int explain, int funcion,int ini,int fin,List<QuerY> queries,List<String> fieldsproc, IndexSearcher searcher,IndexReader reader,Analyzer analyzer,BooleanClause.Occur[] operator,String [] campos,MultiFieldQueryParser queryParser, int nd,int nw,float alfa) throws IOException, ParseException{
-		Map<String,Palabra> pwr = new HashMap<String, Palabra>(); 
 		float sumaAve = 0;
 		float sumaAveExpandida = 0;
 		System.out.println("PSEUDO RELEVANCE FEEDBACK");
 		for(int j= ini; j<=fin; j++ ){
 			double pqd = 0;
+			Map<String,Palabra> pwr = new HashMap<String, Palabra>(); //MAP CON TODAS LAS PALABRAS DE LA COLECCION Y SU P(w|R) 
 			QuerY q = queries.get(j-1);
+			
+			
 			//OBTENEMOS LOS ND PRIMEROS DOCUMENTOS OBTENIDOS CON LA QUERY
 			PostingsEnum postings = null;
 			ScoreDoc[] hits = new ScoreDoc[nd];
-			Map<String,Integer> terms = new HashMap<String, Integer>(); //<>
-			List<Palabra> palabras = new ArrayList<Palabra>();
-			List<Palabra> palabrasQ = new ArrayList<Palabra>();
 			double pd = (1.0/nd);
 			System.out.println(q.getHits().length);
+			
 			for(int i= 0; i<nd; i++){
+				
+				List<Palabra> palabrasQ = new ArrayList<Palabra>(); //PALABRAS DE LA QUERY Y SU FRECUENCIA EN DOCUMENTO i
+				Map<String,Integer> terms = new HashMap<String, Integer>(); // PALABRAS DE UN DOCUMENTO Y SU FRECUENCIA EN i
+				List<Palabra> palabras = new ArrayList<Palabra>(); //PALABRAS DE UN DOCUMENTO Y FRECUENCIA TOTAL + FRECUENCIA DOC i
+				
+				pqd = 0;
 				hits[i] = q.getHits()[i];
 				ScoreDoc score = hits[i];
 				Document doc = searcher.doc(score.doc);
 				List<IndexableField> fields = doc.getFields();
 				int doc_size = 0; // NUMERO DE PALABRAS DEL DOCUMENTO
 				int collection_size  = 0; //NUMERO DE PALABRAS EN COLECCION
+				
 				for(IndexableField f: fields){
-					doc_size += f.stringValue().length();
-					collection_size += reader.getSumTotalTermFreq(f.name());
+					doc_size += f.stringValue().length(); //SUMAMOS NUMERO PALABRAS EN FIELD A TAMANO DOCUMENTO
+					collection_size += reader.getSumTotalTermFreq(f.name()); //SUMAMOS NUMERO PALABRAS EN FIELD A COLECCION
 					
-					Terms terminos = reader.getTermVector(score.doc, f.name());
+					Terms terminos = reader.getTermVector(score.doc, f.name()); //OBTENEMOS TODOS LOS TERMINOS DEL FIELD
 					TermsEnum termsEnum = null;
 					termsEnum = terminos.iterator();
-					while(termsEnum.next()!=null){						
-						if(!terms.containsKey(termsEnum.term().utf8ToString())){
+					while(termsEnum.next()!=null){		//RECORREMOS TODOS LOS TERMINO				
+						if(!terms.containsKey(termsEnum.term().utf8ToString())){ //SI ESA PALABRA AUN NO ESTA ANADIDA
 							postings = termsEnum.postings(postings, PostingsEnum.FREQS);
 							postings.nextDoc();
 							double docFreq = postings.freq(); //NUMERO OCURRENCIAS DEL TERMINO EN DOCUMENTO
 							double totalTermFreq = termsEnum.totalTermFreq(); //NUMERO TOTAL OCURRENCIAS TERMINO EN COLECCION													
-							terms.put(termsEnum.term().utf8ToString(), postings.freq());
+							terms.put(termsEnum.term().utf8ToString(), postings.freq()); //EN TERMS TENEMOS PAR (NOMBRE,FRECUENCIA EN DOC)
 							palabras.add(new Palabra(termsEnum.term().utf8ToString(), totalTermFreq, docFreq));
 						}
 					}
 				}
+				
+				//CALCULO DE P(Q|D)
 				
 				StringTokenizer st = new StringTokenizer(q.getText());
 				while(st.hasMoreTokens()){
@@ -401,15 +409,20 @@ public class CollectionSearcher {
 					if(terms.containsKey(p)){
 						 doc_freq = terms.get(p);
 					}
-					Term termino = new Term("W", p);					
-					palabrasQ.add(new Palabra(p, reader.totalTermFreq(termino), doc_freq));
+					Term termino = new Term("W", p);
+					palabrasQ.add(new Palabra(p, reader.totalTermFreq(termino), doc_freq));  //EN PALABRAS Q QUEDAN TODAS LAS PALABRAS DE QUERY Y FRECUENCIAS
 				}
 				
+				//CALCULO P(Q|D)
 				for(Palabra palabra : palabrasQ){
 					if(funcion==0){
-						 pqd += Math.log10(((1-alfa)*(palabra.getDocFreq()/(double) doc_size)) + (alfa*palabra.getTotalTermFreq()/(double) collection_size));	
+						if(palabra.getTotalTermFreq()!=0.0){
+							 pqd += Math.log10(((1-alfa)*(palabra.getDocFreq()/(double) doc_size)) + (alfa*palabra.getTotalTermFreq()/(double) collection_size));	
+						}
 					}else if(funcion ==1){
-						pqd += Math.log10( (palabra.getDocFreq()+(alfa*palabra.getTotalTermFreq()/(double) collection_size)) / ((double) doc_size + alfa));
+						if(palabra.getTotalTermFreq()!=0.0){
+							pqd += Math.log10( (palabra.getDocFreq()+(alfa*palabra.getTotalTermFreq()/(double) collection_size)) / ((double) doc_size + alfa));		
+						}
 					}
 				}
 				
@@ -424,17 +437,26 @@ public class CollectionSearcher {
 						 pwd = Math.log10( (palabra.getDocFreq()+(alfa*palabra.getTotalTermFreq()/(double) collection_size)) / ((double) doc_size + alfa));
 					}
 					double sumPwr = pwd*pqd*pd;
+					
 					palabra.setPwd(pwd);
+					//CREACION DE OBJETO PALABRADOC
+					PalabraDoc pDoc = new PalabraDoc(pd, pwd, pqd);
+					
 					if(pwr.containsKey(palabra.getPalabra())){
-						 palabra.setPwr(palabra.getPwr()+sumPwr);
-					     pwr.put(palabra.getPalabra(), palabra);
+						 Palabra p = pwr.get(palabra.getPalabra());
+						 p.setPwr(p.getPwr()+sumPwr);
+						 p.addPalabra(pDoc);
+					     pwr.put(palabra.getPalabra(), p);
 					}else{
+						 palabra.setPwr(sumPwr);
+						 palabra.addPalabra(pDoc);
 						 pwr.put(palabra.getPalabra(), palabra);
 					}
 				}
 			}
-			//EN PWR TENEMOS PALABRA CON SCORE PWR ASOCIADO
-			//ORDENAR PWR
+			
+			//EN PWR TENEMOS UN STRING ASOCIADO A PALABRA QUE TIENE EL PWR TOTAL
+			
 			List<Entry<String,Palabra>> orderedTerms = Utilities.orderForMax(pwr);
 			java.util.Iterator<Entry<String, Palabra>> it = orderedTerms.iterator();
 			int i=1;
@@ -445,9 +467,15 @@ public class CollectionSearcher {
 					entry=it.next();
 					sb.append(" "+entry.getKey());
 					if(explain ==1){
-						System.out.println("P(D)= "+pd);
-						System.out.println("P(w|D)= "+entry.getValue().getPwd());
-						System.out.println("P(Q|D)= "+ pqd);
+						System.out.println("----- EXPLAIN ------");
+						System.out.println("PALABRA: "+entry.getKey());
+						System.out.println("P(w|R)= "+entry.getValue().getPwr());
+						for(PalabraDoc p : entry.getValue().getPalabras()){
+							System.out.print("P(D)= "+p.getPd());
+							System.out.print(" P(w|D)= "+p.getPwd());
+							System.out.println(" P(Q|D)= "+ p.getPqd());
+						}
+						
 					}
 					i++;
 				}catch(NoSuchElementException e){
@@ -487,7 +515,7 @@ public class CollectionSearcher {
 	}
 	
 	
-	private static void rf1 (int ini, int fin,int tq,int td,int ndr,int cut, float sumaAve,IndexReader indexReader,Analyzer analyzer,List<String> fieldsproc,List<String> fieldsvisual,IndexSearcher indexSearcher,  List<QuerY> queries){
+	private static void rf1 (int explain,int ini, int fin,int tq,int td,int ndr,int cut, float sumaAve,IndexReader indexReader,Analyzer analyzer,List<String> fieldsproc,List<String> fieldsvisual,IndexSearcher indexSearcher,  List<QuerY> queries){
 		float sumaAve2 = 0;
 		//RELEVANCE FEEDBACK Rf1
 		System.out.println("RELEVANCE FEEDBACK RF1");
@@ -495,7 +523,7 @@ public class CollectionSearcher {
 			try {
 				QuerY q = queries.get(j-1);
 				//OBTENEMOS LOS RESULTADOS DE LA QUERY
-				RelevanceFeedback.rf1( tq,  td,  ndr,  q,  fieldsproc,  indexReader,  analyzer );
+				RelevanceFeedback.rf1( explain,tq,  td,  ndr,  q,  fieldsproc,  indexReader,  analyzer );
 				
 				Query query = q.getQueryExpandida();
 				

@@ -31,7 +31,22 @@ import org.apache.lucene.util.QueryBuilder;
 
 public class RelevanceFeedback {
 
-	private static List<Entry<Term,Double>> orderForMax(Map map){
+	private static List<Entry<Term,TfIdfObject>> orderForMax(Map map){
+		Set<Entry<Term,TfIdfObject>> set = map.entrySet();
+		List<Entry<Term,TfIdfObject>> list = new ArrayList<Entry<Term, TfIdfObject>>(set);
+		
+		Collections.sort( list, new Comparator<Map.Entry<Term, TfIdfObject>>()
+        {
+            public int compare( Map.Entry<Term, TfIdfObject> o1, Map.Entry<Term, TfIdfObject> o2 )
+            {
+                return (o2.getValue().getTfIdf()).compareTo( o1.getValue().getTfIdf() );
+            }
+        } );
+		return list;
+		
+	}
+	
+	private static List<Entry<Term,Double>> orderForMax2(Map map){
 		Set<Entry<Term,Double>> set = map.entrySet();
 		List<Entry<Term,Double>> list = new ArrayList<Entry<Term, Double>>(set);
 		
@@ -61,9 +76,9 @@ public class RelevanceFeedback {
 		return idfTerms;
 	}
 	
-	public static void bestIdfTerms (int tq, QuerY query,List<String> fieldsproc, IndexReader reader, Analyzer analyzer) throws IOException{
+	public static void bestIdfTerms (int explain,int tq, QuerY query,List<String> fieldsproc, IndexReader reader, Analyzer analyzer) throws IOException{
 		Map<Term, Double> idfTerms = getTerminosQuery(tq,query, fieldsproc, reader);
-		List<Entry<Term,Double>> orderedTerms = orderForMax(idfTerms);
+		List<Entry<Term,Double>> orderedTerms = orderForMax2(idfTerms);
 		java.util.Iterator<Entry<Term, Double>> it = orderedTerms.iterator();
 		int i=1;
 		Entry<Term,Double> entry;
@@ -71,13 +86,17 @@ public class RelevanceFeedback {
 		while( i<=tq ){
 			entry=it.next();
 			//System.out.println("TERMINO Q: "+entry.getKey()+" VALOR: "+entry.getValue());
+			if(explain == 1){
+				System.out.println("PALABRA: "+entry.getKey().text());
+				System.out.println("IDF: "+entry.getValue());
+			}
 			query.addTerm(new TermQuery(entry.getKey()), BooleanClause.Occur.SHOULD);
 			i++;
 		}		
 		
 	} 
 	
-	private static Map<Term,Double> getTerminosDocumentos (Terms vector,String field, IndexReader reader,Map<Term,Double> terms) throws IOException{
+	private static Map<Term,TfIdfObject> getTerminosDocumentos (Terms vector,String field, IndexReader reader,Map<Term,TfIdfObject> terms) throws IOException{
 		TFIDFSimilarity tfidf = new ClassicSimilarity();
 		//Map<Term, Double> tfIdfMap = new HashMap<Term, Double>();
 		if(vector!=null){
@@ -89,20 +108,20 @@ public class RelevanceFeedback {
 				double tf = tfidf.tf(termsEnum.totalTermFreq());
 				Term termino = new Term(field,termsEnum.term());
 				if(terms.containsKey(termino)){
-					if (terms.get(termino)<(tf*idf)){
-						terms.put(new Term(field,termsEnum.term()), tf*idf);
+					if (terms.get(termino).getTfIdf()<(tf*idf)){
+						terms.put(new Term(field,termsEnum.term()), new TfIdfObject(tf, idf));
 					}
 				}else{
-					terms.put(new Term(field,termsEnum.term()), tf*idf);
+					terms.put(new Term(field,termsEnum.term()), new TfIdfObject(tf, idf));
 				}
 			}
 		}
 		return terms;
 	}
 	
-	private static void ndrDocs( int td, int ndr, QuerY query,List<String> fieldsproc, IndexReader reader) throws IOException{
+	private static void ndrDocs(int explain, int td, int ndr, QuerY query,List<String> fieldsproc, IndexReader reader) throws IOException{
 		List<Integer> relevantes = query.getRelevants();
-		Map<Term,Double> terms = new HashMap<Term, Double>();
+		Map<Term,TfIdfObject> terms = new HashMap<Term, TfIdfObject>();
 		for(int i= 0; i<ndr; i++){
 			if(i==relevantes.size()){
 				break;
@@ -113,13 +132,19 @@ public class RelevanceFeedback {
 			terms = getTerminosDocumentos(termsT, "T", reader,terms);
 			terms = getTerminosDocumentos(termsW, "W", reader,terms);
 		}
-		List<Entry<Term,Double>> orderedTerms = orderForMax(terms);
-		java.util.Iterator<Entry<Term, Double>> it = orderedTerms.iterator();
+		List<Entry<Term,TfIdfObject>> orderedTerms = orderForMax(terms);
+		java.util.Iterator<Entry<Term, TfIdfObject>> it = orderedTerms.iterator();
 		int i=1;
-		Entry<Term,Double> entry;
+		Entry<Term,TfIdfObject> entry;
 		while( i<=td ){
 			entry=it.next();
 			//System.out.println("TERMINO D: "+entry.getKey()+" VALOR: "+entry.getValue());
+			if(explain ==1){
+				System.out.println("PALABRA: "+entry.getKey().text());
+				System.out.println("TF:" +entry.getValue().getTf());
+				System.out.println("IDF:" +entry.getValue().getIdf());
+				
+			}
 			query.addTerm(new TermQuery(entry.getKey()), BooleanClause.Occur.SHOULD);
 			i++;
 		}		
@@ -153,9 +178,9 @@ public class RelevanceFeedback {
 		return builder.build();
 	}
 	
-	public static void rf1(int tq, int td, int ndr, QuerY query,List<String> fieldsproc, IndexReader reader, Analyzer analyzer ) throws IOException{
-		bestIdfTerms(tq, query, fieldsproc, reader, analyzer);
-		ndrDocs( td, ndr, query, fieldsproc, reader);
+	public static void rf1(int explain, int tq, int td, int ndr, QuerY query,List<String> fieldsproc, IndexReader reader, Analyzer analyzer ) throws IOException{
+		bestIdfTerms(explain,tq, query, fieldsproc, reader, analyzer);
+		ndrDocs( explain,td, ndr, query, fieldsproc, reader);
 	}
 	
 

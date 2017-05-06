@@ -1,17 +1,28 @@
 package es.udc.fi.ri.mri_searcher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Palabra {
 	private String palabra;
 	private double totalTermFreq; //Frecuencia palabra en colección
 	private double docFreq; //frecuencia palabra en documento
 	private double pwd;
 	private Double pwr;
+	private List<PalabraDoc> listaPalabras = new ArrayList<PalabraDoc>();
 	
 	public Palabra(String palabra, double totalTermFreq, double docFreq) {
 		super();
 		this.palabra = palabra;
 		this.totalTermFreq = totalTermFreq;
 		this.docFreq = docFreq;
+	}
+	
+	public void addPalabra(PalabraDoc p){
+		listaPalabras.add(p);
+	}
+	public List<PalabraDoc> getPalabras(){
+		return this.listaPalabras;
 	}
 	
 	public Double getPwr() {
